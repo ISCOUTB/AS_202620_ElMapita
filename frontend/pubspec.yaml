@@ -1,0 +1,57 @@
+name: frontend
+description: "El Mapita UTB - Frontend Flutter App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core
+  cupertino_icons: ^1.0.8
+  get_it: ^8.0.2
+  either_dart: ^1.0.0
+  equatable: ^2.0.5
+
+  # Networking
+  dio: ^5.7.0
+  supabase_flutter: ^2.5.6
+
+  # State Management
+  flutter_bloc: ^9.0.0
+
+  # Navigation
+  go_router: ^14.2.7
+
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.3.2
+  flutter_secure_storage: ^9.2.2
+
+  # Geolocation
+  geolocator: ^13.0.1
+  permission_handler: ^11.3.1
+
+  # 3D Rendering (placeholder - replace with flame/three.dart when ready)
+  # flame: ^1.22.0
+  # three_dart: ^0.1.8
+
+  # Utils
+  path: ^1.9.0
+  intl: ^0.19.0
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true

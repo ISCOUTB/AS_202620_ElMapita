@@ -323,6 +323,98 @@ Los escenarios EC-01, EC-02 y EC-03 orientan primero el análisis porque combina
 | Actualizar ubicación con alta frecuencia | Sensación de tiempo real | Batería, privacidad y estabilidad visual | Usar la menor frecuencia que permita cumplir EC-03. |
 | Centralizar acceso a Supabase detrás de la API | Seguridad y desacoplamiento | Latencia y costo operativo | Comparar el riesgo de exposición/acoplamiento con los umbrales de EC-01. |
 
+# 4. Contexto y Fronteras (System Scope and Context) {#section-context-and-boundaries}
+
+## 4.1 Contexto de Negocio — Actores e Interacciones
+
+| Actor | Rol | Interacciones principales con El Mapita | Permisos / Accesos |
+|-------|-----|------------------------------------------|---------------------|
+| **Estudiante de nuevo ingreso** | Usuario principal | Buscar salones, laboratorios, baños, cafeterías, bibliotecas; ver ubicación en tiempo real; navegar entre pisos; seleccionar punto de partida manual | Acceso completo a mapas 3D y POIs; ubicación opcional (consentimiento) |
+| **Visitante / Padre de familia** | Usuario ocasional | Consultar mapa del campus; localizar edificio de evento o reunión; orientación básica sin cuenta | Acceso de solo lectura a mapas públicos; sin autenticación requerida |
+| **Personal docente** | Usuario recurrente | Consultar ubicación de salones asignados; verificar cambios de aula; acceso a información actualizada de espacios | Acceso a mapas + datos de asignación de salones (vía Supabase Auth) |
+| **Personal administrativo** | Usuario recurrente | Gestionar solicitudes de espacios; consultar disponibilidad; reportar incidencias en señalética | Acceso a panel de administración (roles elevados en Supabase Auth) |
+| **Administración UTB (Dirección de Tecnología)** | Stakeholder / Owner | Supervisar uso de la app; analizar métricas de adopción; aprobar actualizaciones de mapas y POIs | Acceso a dashboard de métricas y panel de gestión de contenido (CMS interno) |
+
+## 4.2 Sistemas Externos y Dependencias
+
+| Sistema Externo | Tipo | Qué provee a El Mapita | Protocolo / Interfaz | Criticidad |
+|-----------------|------|------------------------|----------------------|------------|
+| **Supabase Auth** | IAM / AuthN/AuthZ | Autenticación (email, magic link, OAuth), gestión de roles (estudiante, staff, admin), JWT para API | HTTPS / REST + WebSocket (Realtime) | **Alta** — sin auth no hay personalización ni roles |
+| **Supabase Database (PostgreSQL + PostGIS)** | Persistencia geoespacial | Edificios, pisos, modelos 3D (referencias), POIs (salones, baños, etc.), geometrías, versiones de caché | HTTPS / PostgREST (REST) + pg driver (backend) | **Alta** — fuente de verdad de datos espaciales |
+| **Supabase Storage** | Almacenamiento de blobs | Archivos .glb/.gltf de modelos 3D, texturas, assets de pisos, imágenes de POIs | HTTPS / S3-compatible REST | **Media** — modelos pueden cacharse localmente |
+| **Supabase Realtime** | Pub/Sub | Notificaciones de cambios en POIs, edificios, versiones de modelos (invalidación de caché) | WebSocket (WSS) | **Media** — mejora frescura, no bloquea funcionamiento |
+| **Plataforma de ubicación del dispositivo (iOS CoreLocation / Android Fused Location)** | Sensor / OS Service | Coordenadas lat/long, precisión (horizontal accuracy), floor level (cuando disponible), estado de permisos | API nativa del SO (no red) | **Alta** — core de geolocalización en tiempo real |
+| **APIs de mapas base (Mapbox / Google Maps / OpenStreetMap)** | Servicio de mapas | Tiles de mapa base (opcional, para vista 2D de contexto), geocodificación inversa, routing exterior | HTTPS / REST (Vector tiles, GeoJSON) | **Baja** — el core 3D es propio; solo contexto exterior |
+| **Servicio de notificaciones push (FCM / APNs)** | Mensajería | Alertas de emergencia, cambios de salón, eventos de campus | HTTPS / REST | **Baja** — funcionalidad futura |
+
+
+> **Nota:** La autenticación (Supabase Auth) delimita el acceso a capacidades de escritura y administración. Usuarios no autenticados operan en modo "visitante" (solo lectura, mapas públicos).
+
+
+### 4.3.1 Esquemas de Datos Clave (Referencia)
+
+**Edificio (Building)**
+```json
+{
+  "id": "uuid",
+  "nombre": "string",
+  "codigo": "string",
+  "geometria": "Polygon (PostGIS)",
+  "pisos": ["PisoRef"],
+  "versionModelo3D": "string (semver)",
+  "actualizadoEn": "timestamp"
+}
+```
+
+**Piso (Floor)**
+```json
+{
+  "id": "uuid",
+  "edificioId": "uuid",
+  "numero": "integer",
+  "nombre": "string",
+  "modelo3DUrl": "string (Supabase Storage signed URL)",
+  "modelo3DVersion": "string",
+  "alturaMetros": "number",
+  "pois": ["PoiRef"]
+}
+```
+
+**Punto de Interés (POI)**
+```json
+{
+  "id": "uuid",
+  "pisoId": "uuid",
+  "tipo": "enum: salon|laboratorio|bano|cafeteria|biblioteca|escalera|ascensor|otro",
+  "nombre": "string",
+  "geometria": "Point (PostGIS) / x,y en coordenadas modelo 3D",
+  "metadatos": "jsonb (capacidad, horario, accesibilidad, etc.)"
+}
+```
+
+**Ubicación de Usuario (UserLocation — solo en memoria cliente, no persistida)**
+```json
+{
+  "latitud": "number",
+  "longitud": "number",
+  "precisionMetros": "number",
+  "pisoEstimado": "integer?",
+  "fuente": "enum: gps|wifi|ble|manual",
+  "timestamp": "ISO8601",
+  "incertidumbreMostrada": "boolean"
+}
+```
+
+## 4.4 Diagrama de Contexto (Referencia Visual)
+
+El diagrama C4 Nivel 1 (Contexto) en [`../c4/C4_Contexto.png`](../c4/C4_Contexto.png) representa gráficamente:
+- El sistema **El Mapita** (App Flutter + API NestJS) como contenedor central
+- Actores humanos (Estudiante, Visitante, Personal, Admin UTB)
+- Sistemas externos (Supabase Auth/DB/Storage/Realtime, OS Location, Map Tiles)
+- Flujos de datos y protocolos en cada frontera
+
+---
+
 # Risks and Technical Debts {#section-technical-risks}
 
 # Glossary {#section-glossary}
