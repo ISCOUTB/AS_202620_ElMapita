@@ -4,13 +4,13 @@ Aplicación móvil interactiva con mapa 3D de la Universidad Tecnológica de Bol
 
 ---
 
-## 👥 Equipo de Desarrollo
+## Equipo de Desarrollo
 
 - Diego Rosales Garza
 - Rodrigo Vazquez Rico
 - Angel Fabian Gutierrez Gomez
 
-## 🎯 Stakeholders / Beneficiarios
+## Stakeholders / Beneficiarios
 
 - Estudiantes de nuevo ingreso
 - Visitantes y padres de familia
@@ -19,7 +19,7 @@ Aplicación móvil interactiva con mapa 3D de la Universidad Tecnológica de Bol
 
 ---
 
-## 🛠 Stack Tecnológico
+## Stack Tecnológico
 
 | Capa | Tecnología |
 | :--- | :--- |
@@ -32,7 +32,7 @@ Aplicación móvil interactiva con mapa 3D de la Universidad Tecnológica de Bol
 
 ---
 
-## 🏗 Arquitectura
+## Arquitectura
 
 **Estilo seleccionado:** **Monolito Modular** (para ambos backend y frontend)
 
@@ -76,7 +76,7 @@ frontend/lib/
 
 ---
 
-## 📚 Documentación de Arquitectura
+## Documentación de Arquitectura
 
 | Documento | Ubicación | Descripción |
 |-----------|-----------|-------------|
@@ -88,7 +88,7 @@ frontend/lib/
 
 ---
 
-## 🚀 Inicio Rápido
+## Inicio Rápido
 
 ### Prerrequisitos
 
@@ -153,7 +153,7 @@ cd frontend && flutter run
 
 ---
 
-## ✅ Verificación (Smoke Tests)
+## Verificación (Smoke Tests)
 
 ### Backend
 ```bash
@@ -183,7 +183,7 @@ flutter test
 
 ---
 
-## 📁 Estructura del Repositorio
+## Estructura del Repositorio
 
 ```
 AS_202620_ElMapita/
@@ -223,95 +223,10 @@ AS_202620_ElMapita/
 
 ---
 
-## 🔧 Configuración Supabase (Base de Datos)
-
-### Tablas requeridas (SQL)
-
-```sql
--- Extensiones
-CREATE EXTENSION IF NOT EXISTS postgis;
-
--- Edificios
-CREATE TABLE edificios (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nombre TEXT NOT NULL,
-  codigo TEXT UNIQUE NOT NULL,
-  geometria GEOMETRY(Polygon, 4326),
-  version_modelo_3d TEXT DEFAULT '1.0.0',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Pisos
-CREATE TABLE pisos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  edificio_id UUID REFERENCES edificios(id) ON DELETE CASCADE,
-  numero INTEGER NOT NULL,
-  nombre TEXT,
-  modelo_3d_url TEXT,
-  modelo_3d_version TEXT DEFAULT '1.0.0',
-  altura_metros NUMERIC DEFAULT 3.5,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- POIs
-CREATE TABLE pois (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  piso_id UUID REFERENCES pisos(id) ON DELETE CASCADE,
-  tipo TEXT CHECK (tipo IN ('salon','laboratorio','bano','cafeteria','biblioteca','escalera','ascensor','otro')),
-  nombre TEXT NOT NULL,
-  geometria GEOMETRY(Point, 4326),
-  metadatos JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Índices geoespaciales
-CREATE INDEX idx_edificios_geom ON edificios USING GIST (geometria);
-CREATE INDEX idx_pisos_edificio ON pisos (edificio_id);
-CREATE INDEX idx_pois_piso ON pois (piso_id);
-CREATE INDEX idx_pois_geom ON pois USING GIST (geometria);
-
--- RLS Policies (ejemplo)
-ALTER TABLE edificios ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read edificios" ON edificios FOR SELECT USING (true);
-```
-
 ### Storage Buckets
 
 - `modelos-3d` — Archivos `.glb`/`.gltf` de modelos 3D por edificio/versión
 
 ---
 
-## 🎯 Aspectos Implementados (Corte Vertical A-01)
-
-| Aspecto | Descripción | Estado |
-|---------|-------------|--------|
-| **A-01: Mapa 3D + Ubicación** | Visualización interactiva campus 3D, navegación táctil, cambio de piso, POIs, geolocalización con incertidumbre y fallback manual | 🟡 Esqueleto listo |
-
-### Escenarios de Calidad (Trazabilidad)
-
-| ID | Escenario | Criterio | Endpoint/Feature Relacionado |
-|----|-----------|----------|------------------------------|
-| **EC-01** | Carga inicial mapa 3D < 5s p95 | `GET /api/v1/map/buildings/:id` + descarga modelo | `LoadBuildingUseCase`, `ModelCache` |
-| **EC-02** | Fluidez 3D ≥ 30 FPS | Renderizado 3D (Flame/three.dart pendiente) | `MapPage`, `PoiMarker` |
-| **EC-03** | Ubicación GPS ±15m o fallback manual < 10s | `LocationService`, `PrecisionIndicator` | `GetLocationUseCase`, `LocationPage` |
-| **EC-04** | Modo offline < 5s con caché válida | `ModelCache` (Hive), `LocalStorage` | `LoadBuildingUseCase` con caché |
-
 ---
-
-## 📦 Próximos Pasos (Semana 4+)
-
-1. **Implementar renderizado 3D real** con `flame` o `three_dart` en `MapPage`
-2. **Conectar Supabase real** configurando credenciales en `.env`
-3. **Completar autenticación** flujo completo login/register/refresh
-4. **Tests de integración** backend (e2e) y frontend (integration_test)
-5. **CI/CD** GitHub Actions para lint, test, build
-6. **Corte A-02:** Navegación interior paso a paso (routing)
-
----
-
-## 📄 Licencia
-
-Proyecto académico - Universidad Tecnológica de Bolívar (UTB)
