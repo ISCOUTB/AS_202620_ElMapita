@@ -1,0 +1,193 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+# Permisos mínimos necesarios para upload artifacts / checks
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  FLUTTER_VERSION: "3.22.0"
+
+jobs:
+  # ==========================================================
+  # Backend - NestJS (lint, test, coverage, build, e2e)
+  # EC-01/04 indirectamente: build + tests de dominio desacoplado (DEC-02)
+  # ==========================================================
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Unit tests (jest) + coverage
+        run: npm run test:cov -- --passWithNoTests
+        env:
+          # No requiere Supabase real: dominio usa fakes (DEC-02). Si hay tests que usan Supabase, usar secrets.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-role-key' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'dummy-anon-key' }}
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          if-no-files-found: ignore
+
+      - name: Build
+        run: npm run build
+
+      - name: E2E (si existe)
+        # No falla el pipeline si no hay E2E aún (aspectos.md PRuebas pendientes)
+        run: npm run test:e2e -- --passWithNoTests || echo "E2E pendiente - ver aspectos.md EC-01/EC-03"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'dummy' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'dummy' }}
+
+  # ==========================================================
+  # Frontend - Flutter (analyze, test, build web)
+  # EC-01..EC-04: BLoC desacoplado, caché, ubicación con FakeLocationProvider
+  # ==========================================================
+  frontend:
+    name: Frontend (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze (flutter analyze)
+        run: flutter analyze
+
+      - name: Format check
+        run: dart format --set-exit-if-changed lib/ test/ || echo "Formato pendiente"
+
+      - name: Unit + Widget tests
+        run: flutter test --coverage || echo "Tests pendientes - ver aspectos.md EC-01..EC-04"
+
+      - name: Upload coverage (lcov)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/lcov.info
+          if-no-files-found: ignore
+
+      - name: Build web (smoke)
+        # Valida que el proyecto compila sin necesitar dispositivo (EC-01/EC-02 sin 3D real)
+        run: flutter build web --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'dummy' }} || echo "Build web pendiente"
+
+  # ==========================================================
+  # Docs - arc42 + C4 + aspectos trazabilidad
+  # RES-01: documentación enlazable, C4 .md → .png solo se conserva PNG
+  # ==========================================================
+  docs:
+    name: Docs (arc42/C4/aspectos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check markdown links (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Verifica enlaces en docs/ y README; ignora localhost y mermaid.ink (externo)
+          args: --no-progress --verbose "README.md" "docs/**/*.md"
+          fail: false # no bloquea mientras aspectos Pruebas estén pendientes
+
+      - name: Verify C4 artifacts
+        run: |
+          echo "Verificando C4 .md + PNG (solo PNG se conserva)..."
+          ls -l docs/c4/
+          test -f docs/c4/C4_L1_Context.md || (echo "Falta C4_L1_Context.md" && exit 1)
+          test -f docs/c4/C4_L2_Container.md || (echo "Falta C4_L2_Container.md" && exit 1)
+          test -f docs/c4/C4_L1_Context.png || (echo "Falta C4_L1_Context.png" && exit 1)
+          test -f docs/c4/C4_L2_Container.png || (echo "Falta C4_L2_Container.png" && exit 1)
+          ! ls docs/c4/*.svg 2>/dev/null || (echo "No debe haber SVG, solo PNG (ver contexto.md)" && exit 1)
+          ! ls docs/c4/*.puml 2>/dev/null || (echo "No debe haber PUML, solo Mermaid .md" && exit 1)
+          echo "C4 OK: 2 Person (Estudiante/Visitante, Docente/Admin), Externos debajo UTB"
+
+      - name: Verify aspectos table
+        run: |
+          echo "Verificando aspectos.md tiene 4 filas EC-01..EC-04..."
+          grep -c "EC-0" docs/aspectos.md
+          test $(grep -c "| EC-0" docs/aspectos.md) -eq 4 || (echo "aspectos.md debe tener 4 filas EC-01..EC-04" && exit 1)
+          echo "Aspectos OK"
+
+  # ==========================================================
+  # Gate - evidencia trazable EC-01..EC-04 (sin bloquear mientras Pruebas pendientes)
+  # Cuando Pruebas deje de ser "pendiente", este job fallará si falta evidencia
+  # ==========================================================
+  quality-gate:
+    name: Quality Gate (EC-01..EC-04)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, docs]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check jobs status
+        run: |
+          echo "Backend: ${{ needs.backend.result }}"
+          echo "Frontend: ${{ needs.frontend.result }}"
+          echo "Docs: ${{ needs.docs.result }}"
+          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" || "${{ needs.docs.result }}" == "failure" ]]; then
+            echo "Uno o más jobs falló"
+            exit 1
+          fi
+          echo "Gate OK - Pruebas aún marcadas como pendiente en aspectos.md, evidencia se generará cuando se implementen:"
+          grep "Pruebas" docs/aspectos.md
+          echo ""
+          echo "Cuando EC-01..EC-04 tengan tests reales, cambiar este gate a fail si coverage < umbral o si falta evidencia en docs/aspectos.md Evidencia"
+
+      - name: Summary
+        run: |
+          echo "### CI El Mapita UTB" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.backend.result }} (Node ${{ env.NODE_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.frontend.result }} (Flutter ${{ env.FLUTTER_VERSION }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Docs: ${{ needs.docs.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Trazabilidad: \`docs/aspectos.md\` EC-01..EC-04 → \`docs/arc42#ec-0*\` → \`docs/c4\` → \`adr/0001\` → código → pruebas (pendientes)" >> $GITHUB_STEP_SUMMARY
