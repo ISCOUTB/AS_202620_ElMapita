@@ -83,7 +83,8 @@ frontend/lib/
 | **arc42 Sección 4: Contexto y Fronteras** | `docs/arc42/arc42-template-EN.md#section-context-and-boundaries` | Actores, sistemas externos, fronteras de negocio y técnicas |
 | **Matriz Comparativa de Patrones** | `docs/comparativa-de-arquitecturas.md` | Capas vs Hexagonal vs Monolito Modular con criterios ponderados |
 | **ADR-0001: Estilo Arquitectónico** | `docs/adr/0001-estilo-arquitectonico-propuesto.md` | Decisión formal con consecuencias y plan de implementación |
-| **C4 Nivel 1: Contexto** | `docs/c4/C4_Contexto.png` | Diagrama de contexto del sistema |
+| **C4 Nivel 1: Contexto** | `docs/c4/C4_L1_Context.png` ([Mermaid](../docs/c4/C4_L1_Context.md)) | Diagrama de contexto del sistema (actores + Supabase + SO Location) |
+| **C4 Nivel 2: Contenedor** | `docs/c4/C4_L2_Container.png` ([Mermaid](../docs/c4/C4_L2_Container.md)) | Desglose en App Flutter, API NestJS, Supabase (Auth/DB/Storage/Realtime), caché Hive/Filesystem |
 | **Escenarios de Calidad (EC-01 a EC-04)** | `docs/arc42/arc42-template-EN.md#section-quality-scenarios` | Rendimiento, fluidez, ubicación, disponibilidad |
 
 ---

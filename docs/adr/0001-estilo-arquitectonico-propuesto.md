@@ -184,5 +184,5 @@ frontend/
 
 - [Matriz Comparativa Completa](comparativa-de-arquitecturas.md)
 - [arc42 Sección 4: Contexto y Fronteras](../arc42/arc42-template-EN.md#section-context-and-boundaries)
-- [C4 Nivel 1 - Contexto](../c4/C4_Contexto.png)
+- [C4 Nivel 1 - Contexto](../c4/C4_L1_Context.png) ([Mermaid](../c4/C4_L1_Context.md)) y [C4 Nivel 2 - Contenedor](../c4/C4_L2_Container.png) ([Mermaid](../c4/C4_L2_Container.md)) — ver [`docs/c4/contexto.md`](../c4/contexto.md)
 - [Escenarios de Calidad EC-01 a EC-04](../arc42/arc42-template-EN.md#section-quality-scenarios)
