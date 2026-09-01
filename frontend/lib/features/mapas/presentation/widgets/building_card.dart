@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class BuildingCard extends StatelessWidget {
   final Building building;

@@ -1,8 +1,6 @@
 // lib/features/pois/pois_feature.dart - Public API exports
+//
+// Solo el dominio está implementado por ahora; repositorio, casos de uso,
+// bloc y página quedan pendientes como trabajo aparte.
 
 export 'domain/entities.dart';
-export 'domain/repositories.dart';
-export 'application/use_cases.dart';
-export 'infrastructure/repositories.dart';
-export 'presentation/bloc/pois_bloc.dart';
-export 'presentation/pages/pois_page.dart';

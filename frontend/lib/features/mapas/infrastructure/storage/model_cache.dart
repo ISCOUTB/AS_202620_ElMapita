@@ -1,10 +1,11 @@
 // lib/features/mapas/infrastructure/storage/model_cache.dart
 
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import '../../../core/storage/local_storage.dart';
+import '../../../../core/storage/local_storage.dart';
 
 class ModelCache {
   final LocalStorage _storage;

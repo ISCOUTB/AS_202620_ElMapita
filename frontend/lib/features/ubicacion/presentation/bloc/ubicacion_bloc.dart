@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../application/get_location_use_case.dart';
 import '../../domain/entities.dart';
-import '../../../core/platform/permission_service.dart';
+import '../../../../core/platform/permission_service.dart';
 
 // Events
 abstract class UbicacionEvent extends Equatable {

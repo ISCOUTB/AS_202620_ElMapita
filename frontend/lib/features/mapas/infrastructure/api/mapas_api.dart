@@ -3,7 +3,6 @@
 import 'package:dio/dio.dart';
 import 'package:either_dart/either.dart';
 import '../../domain/entities.dart';
-import '../../domain/repositories.dart';
 
 class MapasApi {
   final Dio _dio;

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../bloc/mapas_bloc.dart';
-import '../../domain/entities.dart';
+import 'package:go_router/go_router.dart';
+import '../bloc/mapas_bloc.dart';
 import '../widgets/building_card.dart';
-import '../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/widgets/common_widgets.dart';
 
 class BuildingListPage extends StatefulWidget {
   const BuildingListPage({super.key});

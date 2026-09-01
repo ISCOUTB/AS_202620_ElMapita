@@ -1,46 +1,30 @@
 // lib/app.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'core/di/injector.dart';
-import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'shared/theme/app_theme.dart';
+import 'shared/pages/splash_page.dart';
+import 'shared/locale/locale_cubit.dart';
+import 'l10n/app_localizations.dart';
 import 'features/mapas/presentation/bloc/mapas_bloc.dart';
 import 'features/ubicacion/presentation/bloc/ubicacion_bloc.dart';
-import 'features/auth/presentation/pages/login_page.dart';
-import 'features/auth/presentation/pages/register_page.dart';
 import 'features/mapas/presentation/pages/map_page.dart';
-import 'features/mapas/presentation/pages/building_list_page.dart';
 import 'features/ubicacion/presentation/pages/location_page.dart';
+import 'features/campus/presentation/pages/campus_home_page.dart';
 
 final _router = GoRouter(
-  initialLocation: '/',
-  redirect: (context, state) {
-    final authState = context.read<AuthBloc>().state;
-    final isLoggedIn = authState is AuthAuthenticated;
-    final isAuthRoute = state.matchedLocation.startsWith('/login') || state.matchedLocation.startsWith('/register');
-    
-    if (!isLoggedIn && !isAuthRoute) {
-      return '/login';
-    }
-    if (isLoggedIn && isAuthRoute) {
-      return '/map';
-    }
-    return null;
-  },
+  initialLocation: '/splash',
   routes: [
     GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginPage(),
-    ),
-    GoRoute(
-      path: '/register',
-      builder: (context, state) => const RegisterPage(),
+      path: '/splash',
+      builder: (context, state) => const SplashPage(),
     ),
     GoRoute(
       path: '/map',
-      builder: (context, state) => const BuildingListPage(),
+      builder: (context, state) => const CampusHomePage(),
       routes: [
         GoRoute(
           path: 'building/:buildingId',
@@ -65,17 +49,29 @@ class ElMapitaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => getIt<AuthBloc>()..add(AuthCheckStatus())),
         BlocProvider(create: (_) => getIt<MapasBloc>()),
         BlocProvider(create: (_) => getIt<UbicacionBloc>()),
+        BlocProvider(create: (_) => getIt<LocaleCubit>()),
       ],
-      child: MaterialApp.router(
-        title: 'El Mapita UTB',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        routerConfig: _router,
+      child: BlocBuilder<LocaleCubit, Locale>(
+        builder: (context, locale) {
+          return MaterialApp.router(
+            title: 'El Mapita UTB',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: ThemeMode.system,
+            locale: locale,
+            supportedLocales: LocaleCubit.supportedLocales,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: _router,
+          );
+        },
       ),
     );
   }

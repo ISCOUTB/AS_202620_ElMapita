@@ -1,7 +1,7 @@
 // lib/features/ubicacion/presentation/widgets/location_button.dart
 
 import 'package:flutter/material.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class LocationButton extends StatelessWidget {
   final VoidCallback onPressed;

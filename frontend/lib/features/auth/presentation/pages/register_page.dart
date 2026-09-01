@@ -1,10 +1,11 @@
 // lib/features/auth/presentation/pages/register_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../bloc/auth_bloc.dart';
-import '../../../shared/widgets/common_widgets.dart';
+import '../bloc/auth_bloc.dart';
+import '../../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});

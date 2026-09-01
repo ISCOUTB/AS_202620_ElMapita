@@ -2,12 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../bloc/mapas_bloc.dart';
+import 'package:go_router/go_router.dart';
+import '../bloc/mapas_bloc.dart';
 import '../../domain/entities.dart';
 import '../widgets/floor_selector.dart';
-import '../widgets/poi_marker.dart';
-import '../../../features/ubicacion/presentation/widgets/location_button.dart';
-import '../../../shared/widgets/common_widgets.dart';
+import '../../../../features/ubicacion/presentation/widgets/location_button.dart';
+import '../../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class MapPage extends StatefulWidget {
   final String buildingId;

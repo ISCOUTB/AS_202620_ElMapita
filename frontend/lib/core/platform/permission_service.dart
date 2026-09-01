@@ -1,7 +1,8 @@
 // Platform services - Permissions
 // lib/core/platform/permission_service.dart
 
-import 'package:permission_handler/permission_handler.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
+import 'package:permission_handler/permission_handler.dart' show Permission;
 import 'package:either_dart/either.dart';
 
 class PermissionService {
@@ -34,6 +35,6 @@ class PermissionService {
   }
 
   Future<void> openAppSettings() async {
-    await openAppSettings();
+    await ph.openAppSettings();
   }
 }

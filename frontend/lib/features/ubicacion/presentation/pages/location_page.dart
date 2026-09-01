@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../bloc/ubicacion_bloc.dart';
+import '../bloc/ubicacion_bloc.dart';
 import '../../domain/entities.dart';
-import '../../../shared/widgets/common_widgets.dart';
-import '../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/common_widgets.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class LocationPage extends StatefulWidget {
   const LocationPage({super.key});
@@ -59,7 +59,9 @@ class _LocationPageState extends State<LocationPage> {
           }
 
           if (state is LocationLoaded || state is LocationWatching) {
-            final location = state is LocationLoaded ? state.location : state.location;
+            final location = state is LocationLoaded
+                ? state.location
+                : (state as LocationWatching).location;
             return _buildLocationView(location, state is LocationWatching);
           }
 

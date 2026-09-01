@@ -1,6 +1,7 @@
 // lib/features/auth/domain/repositories.dart
 
 import 'package:either_dart/either.dart';
+import 'package:equatable/equatable.dart';
 import 'entities.dart';
 
 abstract class AuthRepository {

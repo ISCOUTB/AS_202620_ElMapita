@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../application/sign_in_use_case.dart';
 import '../../domain/entities.dart';
-import '../../../core/storage/secure_storage.dart';
+import '../../../../core/storage/secure_storage.dart';
 
 // Events
 abstract class AuthEvent extends Equatable {

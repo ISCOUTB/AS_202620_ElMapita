@@ -1,5 +1,7 @@
 // lib/shared/extensions/extensions.dart
 
+import 'package:flutter/material.dart';
+
 extension StringExtensions on String {
   String get capitalize => isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
   

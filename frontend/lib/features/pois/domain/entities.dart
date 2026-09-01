@@ -1,6 +1,5 @@
 // lib/features/pois/domain/entities.dart
 
-import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
 import '../../../core/kernel/entity.dart';
 import '../../../core/kernel/value_object.dart';

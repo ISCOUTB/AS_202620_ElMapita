@@ -3,17 +3,19 @@
 
 import 'package:geolocator/geolocator.dart';
 import 'package:either_dart/either.dart';
-import '../storage/local_storage.dart';
 import 'permission_service.dart';
 
 class LocationService {
   final PermissionService _permissionService;
-  LocalStorage? _localStorage;
 
   LocationService(this._permissionService);
 
-  void setLocalStorage(LocalStorage storage) {
-    _localStorage = storage;
+  Future<Either<String, bool>> requestLocationPermission() {
+    return _permissionService.requestLocationPermission();
+  }
+
+  Future<bool> isLocationPermissionGranted() {
+    return _permissionService.isLocationPermissionGranted();
   }
 
   Future<Either<String, Position>> getCurrentPosition({
@@ -44,12 +46,12 @@ class LocationService {
 
   Stream<Position> watchPosition({
     LocationAccuracy accuracy = LocationAccuracy.high,
-    DistanceFilter distanceFilter = const DistanceFilter(meters: 5),
+    int distanceFilterMeters = 5,
   }) {
     return Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: accuracy,
-        distanceFilter: distanceFilter.meters,
+        distanceFilter: distanceFilterMeters,
       ),
     );
   }

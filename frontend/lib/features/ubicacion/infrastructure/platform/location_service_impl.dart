@@ -1,11 +1,9 @@
 // lib/features/ubicacion/infrastructure/platform/location_service_impl.dart
 
 import 'package:either_dart/either.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../domain/entities.dart';
 import '../../domain/repositories.dart';
-import '../../../core/platform/location_service.dart';
-import '../../../core/platform/permission_service.dart';
+import '../../../../core/platform/location_service.dart';
 
 class LocationServiceImpl implements LocationRepository {
   final LocationService _platformService;

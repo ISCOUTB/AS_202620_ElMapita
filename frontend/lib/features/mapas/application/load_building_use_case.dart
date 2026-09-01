@@ -2,9 +2,8 @@
 
 import 'package:either_dart/either.dart';
 import '../domain/entities.dart';
-import '../domain/repositories.dart';
-import '../../infrastructure/api/mapas_api.dart';
-import '../../infrastructure/storage/model_cache.dart';
+import '../infrastructure/api/mapas_api.dart';
+import '../infrastructure/storage/model_cache.dart';
 
 class LoadBuildingUseCase {
   final MapasApi _api;

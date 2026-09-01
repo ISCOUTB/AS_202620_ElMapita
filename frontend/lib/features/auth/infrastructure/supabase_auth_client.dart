@@ -2,8 +2,8 @@
 
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import 'package:either_dart/either.dart';
-import '../../domain/entities.dart';
-import '../../domain/repositories.dart';
+import '../domain/entities.dart';
+import '../domain/repositories.dart';
 import '../../../core/storage/secure_storage.dart';
 
 class SupabaseAuthClient implements AuthRepository {
@@ -26,8 +26,8 @@ class SupabaseAuthClient implements AuthRepository {
 
       final tokens = AuthTokens(
         accessToken: response.session!.accessToken,
-        refreshToken: response.session!.refreshToken,
-        expiresIn: response.session!.expiresIn,
+        refreshToken: response.session!.refreshToken ?? '',
+        expiresIn: response.session!.expiresIn ?? 0,
       );
 
       await _secureStorage.setAccessToken(tokens.accessToken);
@@ -37,8 +37,8 @@ class SupabaseAuthClient implements AuthRepository {
       final user = User.fromJson({
         'id': response.user!.id,
         'email': response.user!.email!,
-        'role': response.user!.userMetadata['role'] ?? 'estudiante',
-        'nombre': response.user!.userMetadata['nombre'] ?? response.user!.email!,
+        'role': response.user!.userMetadata?['role'] ?? 'estudiante',
+        'nombre': response.user!.userMetadata?['nombre'] ?? response.user!.email!,
         'activo': true,
       });
 
@@ -65,8 +65,8 @@ class SupabaseAuthClient implements AuthRepository {
 
       final tokens = AuthTokens(
         accessToken: response.session!.accessToken,
-        refreshToken: response.session!.refreshToken,
-        expiresIn: response.session!.expiresIn,
+        refreshToken: response.session!.refreshToken ?? '',
+        expiresIn: response.session!.expiresIn ?? 0,
       );
 
       await _secureStorage.setAccessToken(tokens.accessToken);
@@ -76,8 +76,8 @@ class SupabaseAuthClient implements AuthRepository {
       final user = User.fromJson({
         'id': response.user!.id,
         'email': response.user!.email!,
-        'role': response.user!.userMetadata['role'] ?? 'estudiante',
-        'nombre': response.user!.userMetadata['nombre'] ?? nombre,
+        'role': response.user!.userMetadata?['role'] ?? 'estudiante',
+        'nombre': response.user!.userMetadata?['nombre'] ?? nombre,
         'activo': true,
       });
 
@@ -100,8 +100,8 @@ class SupabaseAuthClient implements AuthRepository {
 
       final tokens = AuthTokens(
         accessToken: response.session!.accessToken,
-        refreshToken: response.session!.refreshToken,
-        expiresIn: response.session!.expiresIn,
+        refreshToken: response.session!.refreshToken ?? '',
+        expiresIn: response.session!.expiresIn ?? 0,
       );
 
       await _secureStorage.setAccessToken(tokens.accessToken);
@@ -132,8 +132,8 @@ class SupabaseAuthClient implements AuthRepository {
       return Right(User.fromJson({
         'id': user.id,
         'email': user.email!,
-        'role': user.userMetadata['role'] ?? 'estudiante',
-        'nombre': user.userMetadata['nombre'] ?? user.email!,
+        'role': user.userMetadata?['role'] ?? 'estudiante',
+        'nombre': user.userMetadata?['nombre'] ?? user.email!,
         'activo': true,
       }));
     } catch (e) {

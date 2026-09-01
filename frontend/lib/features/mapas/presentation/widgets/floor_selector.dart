@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 class FloorSelector extends StatelessWidget {
   final List<Floor> floors;
