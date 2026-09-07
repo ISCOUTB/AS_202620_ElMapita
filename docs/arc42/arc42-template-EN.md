@@ -57,6 +57,15 @@ Las siguientes condiciones reducen el espacio de solución y provienen de fuente
 | RES-01 | Académica — consigna de la asignatura | La arquitectura debe documentarse con arc42, C4, ADR y trazabilidad desde los aspectos hasta evidencia automatizada. | Es un formato de entrega impuesto. La documentación y los identificadores deben permanecer enlazables desde el repositorio. |
 | RES-02 | Física y tecnológica — dispositivos móviles | La ubicación depende de los sensores y permisos del dispositivo; el GPS se degrada severamente en interiores y entre edificios. | No se puede garantizar precisión interior solo con GPS. La interfaz debe mostrar incertidumbre y ofrecer selección manual, sin presentar una estimación imprecisa como posición exacta. |
 | RES-03 | Operacional — campus y red móvil | La conectividad, latencia y capacidad de los teléfonos de los usuarios son variables en distintos puntos del campus. | Los modelos 3D deben optimizarse y almacenarse en caché local; los fallos de red deben producir estados comprensibles y no bloquear la orientación básica ya descargada. |
+| RES-04 | Reto del corte — propuesto por el equipo | La aplicación debe ejecutarse con rendimiento aceptable en el mayor rango posible de dispositivos móviles, incluyendo gama de entrada, sin excluir usuarios por hardware o versión de sistema operativo. | El parque de dispositivos de la comunidad UTB es heterogéneo; excluir gama baja contradice el propósito de la app. Implica presupuesto acotado de memoria y GPU, un `minSdk` lo más bajo que permita el stack, niveles de detalle (LOD) en los modelos 3D y degradación a vista esquemática. Enlaza con **RSK-02** (sección 11) y endurece el entorno de referencia de **EC-01** y **EC-02**. |
+
+### Impacto de RES-04
+
+**Requisitos:** EC-01 y EC-02 conservan sus umbrales (< 5 s p95 de carga; ≥ 95 % de fotogramas ≤ 33,3 ms) pero su entorno de referencia se extiende de "gama media" a incluir "gama de entrada"; EC-04 (disponibilidad offline) gana prioridad porque los dispositivos de gama baja suelen operar además en redes más pobres.
+
+**C4:** no se introducen contenedores ni relaciones nuevos. La degradación (LOD, vista esquemática) vive dentro del contenedor `App Móvil Flutter` ya existente en el Nivel 2 — los límites de Nivel 1 y Nivel 2 se conservan sin modificación.
+
+**Código:** los puntos de aterrizaje identificados son `frontend/android/app/build.gradle.kts` (`minSdk`, hoy heredado del default de Flutter), `frontend/pubspec.yaml` (`sdk: ^3.12.0`), el futuro adaptador de render 3D y `frontend/lib/features/mapas/infrastructure/storage/model_cache.dart`. Ninguno implementa aún la restricción; el estado de esta deuda está registrado en `correcciones.md`.
 
 ---
 

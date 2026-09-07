@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-09-07 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Diagnosticar la matriz de correcciones del corte 1** — El docente evaluó 12 criterios; 8 en "No cumple" y 3 en "No verificado". Se auditó cada uno contra el estado real del repositorio antes de responder.
+2. **Verificar el tag `corte-1` contra la observación del docente** — `git ls-remote --tags origin` confirma que el tag existe local y remotamente sobre el commit `d3be514`; la observación de que "no existe ninguna etiqueta" es incorrecta. Se distingue explícitamente el *mensaje* de commit `corte-1` (en `4806374`) de la *etiqueta* Git `corte-1` (en `d3be514`).
+3. **Verificar el PDF versionado** — `git ls-files docs/cortes/` confirma `docs/cortes/corte-1.pdf` (274 445 bytes) tracked en el repositorio; la observación de que no existe es incorrecta.
+4. **Diagnosticar la causa raíz del pipeline en rojo** — Vía `gh run view --log-failed` sobre la corrida `33520904103`: el job frontend falla en `flutter pub get` porque `.github/workflows/ci.yml` fija `FLUTTER_VERSION: "3.22.0"` (Dart 3.4) contra `frontend/pubspec.yaml` (`sdk: ^3.12.0`) y `frontend/pubspec.lock` (`flutter >=3.44.0`); el job backend falla en `npm run lint` porque `tseslint.configs.recommendedTypeChecked` marca como error ~10 usos de `any` en los adaptadores de Supabase (`supabase-repositories.ts`, controllers). Por decisión del equipo, no se corrige código ni configuración en este corte — el diagnóstico completo queda registrado en `correcciones.md` como deuda declarada.
+5. **Formalizar la restricción de rendimiento como reto del corte (RES-04)** — El equipo propone que la app funcione en el mayor rango posible de dispositivos móviles, incluyendo gama de entrada. Se documentó en `docs/arc42/arc42-template-EN.md` sección 2 junto con su impacto en requisitos (EC-01/EC-02), límites C4 (sin cambios) y código (deuda pendiente).
+6. **Redactar el ADR-0002** — Registrar la decisión de arquitectura que gobierna RES-04 (LOD + degradación progresiva a vista esquemática), contrastada contra dos alternativas, enlazando con el riesgo ya declarado RSK-02.
+7. **Reescribir `correcciones.md` como documento formal de réplica y deuda declarada** — Responder los 12 criterios de la matriz: rebatir 1 y 2 con evidencia ejecutable, señalar 3/5/7/11 como resueltos por los artefactos de hoy, y justificar técnicamente por qué 4/6/8/9/10 quedan pendientes sin tocar código en esta etapa de pruebas.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/arc42/arc42-template-EN.md`** | Fila `RES-04` en la tabla de restricciones (sección 2) + subsección "Impacto de RES-04" (requisitos, C4, código) |
+| **`docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md`** | ADR nuevo: LOD + degradación progresiva como estrategia para RES-04, alternativas contrastadas, consecuencias con estado de implementación pendiente declarado explícitamente |
+| **`correcciones.md`** | Reescrito de un borrador de 4 líneas a la réplica formal y tabla de deuda declarada para los 12 criterios de la matriz |
+| **`docs/ia.md`** | Esta entrada |
+
+### Conclusión de la sesión
+
+Ningún archivo de código, configuración ni CI fue modificado en esta sesión — se acordó explícitamente con el equipo mantener el alcance en documentación mientras el proyecto sigue en etapa de estabilización del esqueleto. Los criterios que exigen código o mediciones (4, 6, 8, 9, 10) quedan como deuda declarada con diagnóstico técnico verificable, no como omisiones sin explicar.
+
+### Fuentes
+
+`docs/aspectos.md` · `docs/arc42/arc42-template-EN.md` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `.github/workflows/ci.yml` · `correcciones.md`
+
+---
+
 ## 2026-08-31 — Sesión de trabajo con Muse Spark (OpenCode)
 
 ### Instrucciones del día (resumen)
