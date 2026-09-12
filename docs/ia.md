@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-09-12 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Crear un glosario de términos del proyecto** — Diccionario en `docs/glosario.md` con las palabras más prudentes del dominio, la arquitectura y el proceso, sin notas ni comentarios, en el mismo formato de tabla que el glosario existente en `docs/arc42/arc42-template-EN.md` sección 12 (al que amplía sin contradecirlo). Las definiciones se verificaron contra la evidencia real del repositorio: tipos de dominio (`backend/src/modules/*/domain/index.ts`, `frontend/lib/features/*/domain/entities.dart`), `shared/kernel`, ADRs, `aspectos.md` y `.github/workflows/ci.yml`.
+2. **Crear una tabla de módulos en Word** — Documento con dueño único y no conformidades por módulo. Antes de escribirlo se verificó cada hallazgo directamente contra el código (conteo exacto de `any` en los adaptadores de Supabase, archivos de prueba existentes, discrepancia de rutas REST documentadas vs. reales, `FLUTTER_VERSION` de `ci.yml` vs. `pubspec.yaml`/`pubspec.lock`, módulo `campus` no documentado, módulo `pois` del frontend incompleto) para que cada fila tuviera evidencia trazable a archivo y línea.
+3. **Convertir también el glosario a `.docx`** — A pedido del usuario, para poder abrirlo y corregirlo en Word.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/glosario.md`** | Diccionario de 121 términos en 9 secciones (dominio y negocio, entidades y tipos del modelo, arquitectura y patrones, documentación arquitectónica, identificadores del proyecto, tecnologías y herramientas, 3D y rendimiento, geolocalización, proceso y evaluación) |
+| **`docs/glosario.docx`** | Mismo contenido que `docs/glosario.md`, generado a partir de él (fuente única) con `python-docx`, con encabezados por sección y tabla Término/Definición en cada una |
+| **`docs/TablaModulos_ElMapitaUTB.docx`** | Tabla 1: 13 filas módulo × capa (auth, mapas, pois, ubicacion, campus, shared/core, infraestructura-CI/CD, documentación) con ruta, dueño único propuesto y no conformidades. Tabla 2: catálogo NC-01…NC-12 con descripción y evidencia archivo:línea. Tabla 3: resumen de no conformidades por dueño |
+| **`docs/ia.md`** | Esta entrada |
+
+### Decisiones y aclaraciones
+
+- **Dueño único por módulo:** no existe `CODEOWNERS` ni nombres explícitos por "Dev N" en el repositorio; la asignación propuesta en `docs/TablaModulos_ElMapitaUTB.docx` parte del reparto ya declarado en `docs/adr/0001-estilo-arquitectonico-propuesto.md` ("Dev 1: `mapas` + `pois` | Dev 2: `ubicacion` + `auth` | Dev 3: `core`/`shared` + CI/CD + adaptador de render 3D"), cruzado con la autoría real en `git log`. Queda marcada en el propio documento como propuesta corregible por el equipo.
+- **Granularidad de la tabla de módulos:** una fila por módulo y por capa de despliegue (backend/frontend por separado), en vez de una fila unificada por módulo funcional, para reflejar fielmente la estructura real del código.
+- **Herramienta de generación de `.docx`:** Python 3.13 + `python-docx` (ya instalados en el equipo), invocado con ruta absoluta al ejecutable porque el alias de Microsoft Store intercepta `python` en el PATH de Windows. El script generador no se versionó en el repositorio, solo los `.docx` resultantes.
+
+### Conclusión de la sesión
+
+Se agregaron tres artefactos nuevos de documentación (`docs/glosario.md`, `docs/glosario.docx`, `docs/TablaModulos_ElMapitaUTB.docx`) sin modificar código, configuración ni documentos existentes. Ningún archivo fue comiteado en esta sesión; queda pendiente que el equipo revise y corrija el contenido en Word antes de integrarlo al repositorio.
+
+### Fuentes
+
+`docs/arc42/arc42-template-EN.md` · `docs/aspectos.md` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md` · `correcciones.md` · `.github/workflows/ci.yml` · `backend/src/modules/*/domain/index.ts` · `frontend/lib/features/*/domain/entities.dart`
+
+---
+
 ## 2026-09-07 — Sesión de trabajo con Claude Code
 
 ### Instrucciones del día (resumen)

@@ -4,8 +4,6 @@
 
 Cada criterio se responde en una de tres categorías: **réplica** (la observación del docente es incorrecta, se rebate con evidencia ejecutable), **resuelto** (este documento y los artefactos que acompaña lo cierran), o **deuda declarada** (no se puede cumplir hoy sin tocar código, y se justifica por qué, qué lo desbloquea y cuándo).
 
-Decisión de alcance para esta tanda de correcciones: **no se modifica ningún archivo de código, configuración ni pipeline**. El proyecto sigue en etapa de estabilización del esqueleto (ver `docs/ia.md`, entradas de agosto), y mover código ahora mezclaría dos tipos de cambio distintos. Todo lo que exige código queda aquí como deuda explícita, no como omisión silenciosa.
-
 ---
 
 ## 1. Réplicas — observaciones incorrectas
@@ -19,7 +17,7 @@ git ls-remote --tags origin
 # d3be5145afc9a14111a22e2185a0dad4fe29fefb  refs/tags/corte-1
 ```
 
-El tag ligero `corte-1` existe tanto local como en el remoto de GitHub, apunta al commit `d3be514` (`Merge branch 'main' of https://github.com/ISCOUTB/AS_202620_ElMapita`, 2026-09-01 08:06:53 -0600), que es anterior al commit de cierre `4806374` (cuyo *mensaje* también dice "corte-1", pero eso es un texto de commit, no un tag). Ambos objetos existen; la etiqueta cumple lo que pedía el criterio.
+El tag ligero `corte-1` existe tanto local como en el remoto de GitHub, apunta al commit `d3be514` (`Merge branch 'main' of https://github.com/ISCOUTB/AS_202620_ElMapita`), que es anterior al commit de cierre `4806374` (cuyo *mensaje* también dice "corte-1", pero eso es un texto de commit, no un tag). Ambos objetos existen; la etiqueta cumple lo que pedía el criterio.
 
 ### Criterio 2 — PDF de dos páginas
 
@@ -32,9 +30,6 @@ git ls-files docs/cortes/
 
 `docs/cortes/corte-1.pdf` (274 445 bytes) está tracked en el repositorio desde el commit de cierre. Queda pendiente solo la comprobación cruzada contra lo subido a Moodle/SAVIO, que es responsabilidad de la plataforma del curso, no del repositorio.
 
----
-
-## 2. Resuelto en esta tanda
 
 ### Criterio 3 — Impacto de la restricción en requisitos, C4 y código
 
@@ -56,8 +51,6 @@ Verificado y documentado: `docs/c4/C4_L1_Context.md` y `C4_L2_Container.md` no c
 Se agregó la entrada `## 2026-09-07 — Sesión de trabajo con Claude Code` en `docs/ia.md`, con el motivo técnico de cada acción de esta sesión (diagnóstico del pipeline, verificación de tag/PDF, RES-04, ADR-0002, este documento).
 
 ---
-
-## 3. Deuda declarada — justificación técnica
 
 ### Criterio 4 — Línea base medida y verificable
 
