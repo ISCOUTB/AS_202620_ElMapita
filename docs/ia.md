@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-09-13 — Sesión de trabajo con Antigravity
+
+### Instrucciones del día (resumen)
+
+1. **Revisar y estructurar la carpeta `docs/c4` (C4 Nivel 3 — Diagrama de Componentes)** — Revisar y expandir el contenedor `Backend API` (NestJS) por módulos funcionales (`Auth`, `Mapas`, `POIs`, `Ubicación`) y capas arquitectónicas sencillas y claras para entorno escolar (Controladores REST $\rightarrow$ Servicios de Negocio $\rightarrow$ Entidades $\rightarrow$ Adaptadores de Datos).
+2. **Generar y refinar el render gráfico PNG (`C4_L3_Component_Backend.png`)** — Diseñar la disposición visual sin solapamientos ni desbordamientos de bordes. Asegurar que el 100% de los componentes del backend queden encapsulados dentro del límite del contenedor `Backend API [Contenedor]`, ubicando los sistemas externos (`Supabase Cloud` y `Plataforma Ubicación SO`) a la derecha.
+3. **Limpieza de archivos y formatos** — Eliminar archivos borradores en SVG (`.svg`) manteniendo únicamente archivos `.md` e imágenes `.png`. Reemplazar cualquier ruta absoluta local (`file:///d:/...`) en el código Markdown por rutas relativas limpias del proyecto (`backend/src/...`).
+4. **Verificación técnica de trazabilidad contra el código** — Comprobar y justificar que cada uno de los componentes/cuadrados en el diagrama responde a una necesidad real de la aplicación **El Mapita UTB** y se mapea a un archivo de código existente en `backend/src/...`.
+5. **Integración y sincronización Git** — Realizar commit local, merge automático con los cambios concurrentes de la rama `origin/main` y push exitoso al repositorio remoto.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/c4/C4_L3_Component_Backend.png`** | Diagrama C4 Nivel 3 renderizado en PNG de alta resolución con diseño por capas y módulos impecables sin cruces. |
+| **`docs/c4/C4_L3_Component_Backend.md`** | Documentación especificación del C4 Nivel 3 con el render PNG incrustado directamente y tabla de trazabilidad 1:1 hacia el código en `backend/src/...`. |
+| **`docs/c4/contexto.md`** | Índice general del Modelo C4 actualizado para integrar el Nivel 3 junto con Nivel 1 y Nivel 2. |
+| **`docs/ia.md`** | Esta entrada de registro de IA. |
+
+### Decisiones y aclaraciones
+
+- **Formato gráfico único (PNG):** A petición del usuario, se descartó el formato vectorial `.svg` y los bloques de código textual de Mermaid no compatibles en visores estándar, dejando como artefacto visual oficial el render `.png`.
+- **Adaptación a ámbito escolar:** Se simplificó la terminología de arquitectura limpia (reemplazando jerga como *Shared Kernel* o *Domain Entities*) por nombres directos y explicables para evaluación escolar (`Controladores REST`, `Servicios de Negocio`, `Entidades de Dominio`, `Adaptadores de Infraestructura`, `Configuración y Cliente Supabase`).
+- **Rutas de código limpias:** Se sustituyeron las URLs de archivos locales de Windows por rutas relativas puras dentro del repositorio (`backend/src/...`).
+
+### Fuentes
+
+`backend/src/...` · `docs/c4/C4_L1_Context.md` · `docs/c4/C4_L2_Container.md` · `docs/c4/contexto.md` · `README.md`
+
+---
+
 ## 2026-09-13 — Sesión de trabajo con Claude Code
 
 ### Instrucciones del día (resumen)
