@@ -1,4 +1,4 @@
-# C4 Model — El Mapita UTB (Niveles 1 y 2)
+# C4 Model — El Mapita UTB (Niveles 1, 2 y 3)
 
 > Referencia metodológica: [C4 Model: Documentación Clara y Efectiva para Arquitecturas de Software](https://dev.to/ajcastillo/c4-model-documentacion-clara-y-efectiva-para-arquitecturas-de-software-43od) — Aj Castillo (DEV.to).  
 > Trazabilidad: `docs/arc42/arc42-template-EN.md` S3 (Contexto) y S5 (Bloques), `docs/comparativa-de-arquitecturas.md`.
@@ -10,7 +10,8 @@
 | Nivel | Pregunta clave (artículo) | Interlocutores | Qué muestra |
 |-------|---------------------------|----------------|-------------|
 | **N1 Contexto** | *¿Dónde encaja este sistema dentro del ecosistema?* | Stakeholders no técnicos, gerencia, soporte | Actores + sistema + sistemas externos |
-| **N2 Contenedor** | *¿Cuáles son los contenedores principales? ¿Cómo se comunican? ¿Qué tecnologías?* | Equipos técnicos y gerentes de proyecto | Apps, servicios, BDs y sus protocolos |
+| **N2 Contenedor** | *¿Cuáles son los contenedores principales? ¿Cómo se comunican? Qué tecnologías?* | Equipos técnicos y gerentes de proyecto | Apps, servicios, BDs y sus protocolos |
+| **N3 Componente** | *¿Cómo está estructurado internamente el contenedor principal?* | Desarrolladores y arquitectos | Módulos, controladores, casos de uso, entidades y adaptadores |
 
 Fuentes generativas: **Mermaid C4** (`.md` con `C4Context`/`C4Container`) → render nativo GitHub + export PNG. Solo se conserva PNG como artefacto binario.
 
@@ -152,6 +153,23 @@ C4Container
 * **DEC-01 Monolito Modular** — un solo deploy backend + un solo binary móvil; fronteras por feature (`modules/*`, `features/*`), `shared kernel` mínimo (`backend/src/shared:15`, `frontend/lib/core:12`).
 * **DEC-02 Desacoplo Supabase** — SDK solo en `infrastructure/adapters`; dominio usa `BuildingRepository/FloorRepository/PoiRepository/LocationProvider` (fakes en tests EC-03).
 * **DEC-04 Caché 2 niveles** — Hive + Filesystem versionados, recuperación offline directa desde `mobileApp` sin pasar por `backendApi` cuando `DioClient` falla.
+
+---
+
+## Nivel 3 — Diagrama de Componentes (Backend API)
+
+Expande el contenedor **Backend API** (NestJS Monolito Modular) para mostrar la estructura interna de módulos funcionales (`auth`, `mapas`, `pois`, `ubicacion`) y capas de Arquitectura Limpia (Controladores HTTP $\rightarrow$ Casos de Uso $\rightarrow$ Dominio/Puertos $\rightarrow$ Adaptadores $\rightarrow$ Kernel Compartido).
+
+### Archivos
+
+| Artefacto | Ruta |
+|-----------|------|
+| Mermaid fuente / Especificación | [`C4_L3_Component_Backend.md`](./C4_L3_Component_Backend.md) |
+| Render PNG | [`C4_L3_Component_Backend.png`](./C4_L3_Component_Backend.png) |
+
+### Render estático
+
+![C4 L3 Componentes](./C4_L3_Component_Backend.png)
 
 ---
 
