@@ -4,6 +4,125 @@
 
 ---
 
+## 2026-09-13 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Reescribir por completo `docs/TablaModulos_ElMapitaUTB.docx`** — Reemplazar el catálogo de no conformidades inventado el día anterior por una lista real de 10 hallazgos (H-01…H-10) reportados por el panel de análisis estático de seguridad y confiabilidad del repositorio ("Security snapshot" / "Reliability snapshot"), suministrada íntegramente por el usuario.
+2. **Verificar cada hallazgo contra el código antes de escribirlo** — Se abrió cada archivo y línea señalados (`.github/workflows/ci.yml`, `frontend/android/app/build.gradle.kts`, `frontend/android/app/src/main/AndroidManifest.xml`, `frontend/android/build.gradle.kts`, `scripts/dev.sh`, `frontend/web/index.html`) para confirmar que el patrón reportado existe realmente antes de incluirlo en el documento.
+3. **Clasificar cada hallazgo como corrección real o falso positivo** — Para los reales, redactar un plan de corrección técnico y accionable; para los que resultaran falsos positivos, redactar una justificación en su lugar.
+4. **Dar formato académico al documento** — Títulos y subtítulos en negro (no en el azul institucional usado el día anterior), formato de reporte sobrio.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/TablaModulos_ElMapitaUTB.docx`** (reescrito por completo) | Tabla 1: 14 filas módulo × capa con dueño único; la columna "Hallazgos" ahora referencia los códigos H-01…H-10 en las dos únicas filas donde aplican (`infraestructura/CI-CD` y la nueva fila `configuración de plataforma Android/Web`), y "Sin hallazgos en este corte" en el resto. Tabla 2: resumen de hallazgos por dueño. Sección 3: ficha individual por hallazgo (archivo, línea, severidad, esfuerzo, descripción y plan de corrección o justificación) |
+| **`docs/ia.md`** | Esta entrada |
+
+### Hallazgos verificados y su clasificación
+
+| Código | Archivo | Severidad | Clasificación |
+|---|---|---|---|
+| H-01 | `.github/workflows/ci.yml` L90 | Alta (Seguridad) | Corrección real — pin del hash SHA de `subosito/flutter-action` |
+| H-02 | `.github/workflows/ci.yml` L134 | Alta (Seguridad) | Corrección real — pin del hash SHA de `lychee-action` |
+| H-03 | `frontend/android/app/build.gradle.kts` L29 | Alta (Seguridad) | Corrección real — habilitar ofuscación/minificación en `release` |
+| H-04 | `.github/workflows/ci.yml` L44 | Media (Seguridad) | Corrección real — `npm ci --ignore-scripts` (verificado: sin scripts `prepare`/`postinstall` en `backend/package.json`) |
+| H-05 | `.github/workflows/ci.yml` L100 | Media (Seguridad) | Corrección real — `flutter pub get --enforce-lockfile` |
+| H-06 | `AndroidManifest.xml` L2 | Media (Seguridad) | Corrección real — declarar `android:allowBackup="false"` explícitamente |
+| H-07 | `frontend/android/build.gradle.kts` | Media (Seguridad) | Corrección real — falta `gradle.lockfile` |
+| H-08 | `AndroidManifest.xml` L2 | Baja (Seguridad) | Corrección real — se comprobó que agrava el riesgo: `dio_client.dart` usa `http://localhost:3000/api` como URL base por defecto y `ci.yml` no la sobreescribe en el build web |
+| H-09 | `scripts/dev.sh` L21, L26, L32, L64 | Alta (Confiabilidad) | **Falso positivo** — las cuatro variables evaluadas con `[ ]` están citadas o son un contador numérico seguro; sin escenario de falla real en este script de desarrollo local |
+| H-10 | `frontend/web/index.html` L1 | Media (Confiabilidad) | Corrección real — falta atributo `lang` en `<html>` (WCAG 2.1 3.1.1) |
+
+### Decisiones y aclaraciones
+
+- **Mapeo de hallazgos a módulos/dueños:** ninguno de los 10 hallazgos toca código de dominio de `auth`/`mapas`/`pois`/`ubicacion`/`campus`; todos están en configuración de CI/CD o de plataforma (Android/Web), que ADR-0001 ya asigna a "Dev 3" (Angel Fabian Gutierrez Gomez). Se agregó una fila nueva a la Tabla 1, "configuración de plataforma (Android / Web)", para no forzar estos hallazgos dentro de una fila de módulo funcional a la que no pertenecen.
+- **Único falso positivo (H-09):** se documentó con justificación técnica verificada línea por línea, en vez de un plan de corrección, siguiendo la instrucción explícita del usuario de distinguir hallazgos reales de falsos errores.
+- **Se descartó** un catálogo de no conformidades anterior (redactado el 2026-09-12 a partir de inspección manual del código) al no ser la fuente que el usuario pidió reflejar en este documento; ese catálogo permanece únicamente en el historial de esta conversación, no en el repositorio.
+
+### Conclusión de la sesión
+
+Se reescribió `docs/TablaModulos_ElMapitaUTB.docx` en su totalidad a partir de una fuente externa (panel de análisis estático) verificada contra el código real, no comiteado todavía. `docs/glosario.md` y `docs/glosario.docx` no se modificaron en esta sesión.
+
+### Fuentes
+
+Panel de análisis estático de seguridad y confiabilidad del repositorio (snapshot suministrado por el usuario) · `.github/workflows/ci.yml` · `frontend/android/app/build.gradle.kts` · `frontend/android/app/src/main/AndroidManifest.xml` · `frontend/android/build.gradle.kts` · `frontend/lib/core/network/dio_client.dart` · `scripts/dev.sh` · `frontend/web/index.html` · `backend/package.json` · `docs/adr/0001-estilo-arquitectonico-propuesto.md`
+
+### Ajuste de formato posterior (misma sesión)
+
+Tras la primera versión de la Sección 3, se corrigió un detalle menor de redacción en la ficha de cada hallazgo: el encabezado mostraba "(línea L90)" en vez de "(L90)" (la etiqueta "línea" quedaba duplicada con el prefijo "L" del propio dato), y el hallazgo H-07 (sin línea específica) mostraba "(línea —)" en vez de omitir el paréntesis. Se regeneró `docs/TablaModulos_ElMapitaUTB.docx` con ambos ajustes; el contenido técnico de los 10 hallazgos no cambió.
+
+### Incidencia detectada y corregida: `docs/glosario.docx` desaparecido del disco
+
+Al revisar el estado de `docs/` tras la reescritura de `TablaModulos_ElMapitaUTB.docx`, se detectó que `docs/glosario.docx` — comiteado por el usuario el 2026-09-12 en el commit `3bdc57d` ("actualizacion de documentos para S06") — ya no existía en el sistema de archivos, aunque seguía tracked en Git (aparecía como `deleted` en `git status`). Esta sesión no había tocado ese archivo. Se restauró de forma no destructiva con `git checkout HEAD -- docs/glosario.docx`, recuperando exactamente el contenido ya comiteado, sin pérdida de información. Con esto, la afirmación de la sección "Conclusión de la sesión" de que `docs/glosario.docx` "no se modificó en esta sesión" se mantiene válida en cuanto a contenido (se recuperó el mismo binario comiteado, no se generó uno nuevo).
+
+---
+
+## 2026-09-12 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Crear un glosario de términos del proyecto** — Diccionario en `docs/glosario.md` con las palabras más prudentes del dominio, la arquitectura y el proceso, sin notas ni comentarios, en el mismo formato de tabla que el glosario existente en `docs/arc42/arc42-template-EN.md` sección 12 (al que amplía sin contradecirlo). Las definiciones se verificaron contra la evidencia real del repositorio: tipos de dominio (`backend/src/modules/*/domain/index.ts`, `frontend/lib/features/*/domain/entities.dart`), `shared/kernel`, ADRs, `aspectos.md` y `.github/workflows/ci.yml`.
+2. **Crear una tabla de módulos en Word** — Documento con dueño único y no conformidades por módulo. Antes de escribirlo se verificó cada hallazgo directamente contra el código (conteo exacto de `any` en los adaptadores de Supabase, archivos de prueba existentes, discrepancia de rutas REST documentadas vs. reales, `FLUTTER_VERSION` de `ci.yml` vs. `pubspec.yaml`/`pubspec.lock`, módulo `campus` no documentado, módulo `pois` del frontend incompleto) para que cada fila tuviera evidencia trazable a archivo y línea.
+3. **Convertir también el glosario a `.docx`** — A pedido del usuario, para poder abrirlo y corregirlo en Word.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/glosario.md`** | Diccionario de 121 términos en 9 secciones (dominio y negocio, entidades y tipos del modelo, arquitectura y patrones, documentación arquitectónica, identificadores del proyecto, tecnologías y herramientas, 3D y rendimiento, geolocalización, proceso y evaluación) |
+| **`docs/glosario.docx`** | Mismo contenido que `docs/glosario.md`, generado a partir de él (fuente única) con `python-docx`, con encabezados por sección y tabla Término/Definición en cada una |
+| **`docs/TablaModulos_ElMapitaUTB.docx`** | Tabla 1: 13 filas módulo × capa (auth, mapas, pois, ubicacion, campus, shared/core, infraestructura-CI/CD, documentación) con ruta, dueño único propuesto y no conformidades. Tabla 2: catálogo NC-01…NC-12 con descripción y evidencia archivo:línea. Tabla 3: resumen de no conformidades por dueño |
+| **`docs/ia.md`** | Esta entrada |
+
+### Decisiones y aclaraciones
+
+- **Dueño único por módulo:** no existe `CODEOWNERS` ni nombres explícitos por "Dev N" en el repositorio; la asignación propuesta en `docs/TablaModulos_ElMapitaUTB.docx` parte del reparto ya declarado en `docs/adr/0001-estilo-arquitectonico-propuesto.md` ("Dev 1: `mapas` + `pois` | Dev 2: `ubicacion` + `auth` | Dev 3: `core`/`shared` + CI/CD + adaptador de render 3D"), cruzado con la autoría real en `git log`. Queda marcada en el propio documento como propuesta corregible por el equipo.
+- **Granularidad de la tabla de módulos:** una fila por módulo y por capa de despliegue (backend/frontend por separado), en vez de una fila unificada por módulo funcional, para reflejar fielmente la estructura real del código.
+- **Herramienta de generación de `.docx`:** Python 3.13 + `python-docx` (ya instalados en el equipo), invocado con ruta absoluta al ejecutable porque el alias de Microsoft Store intercepta `python` en el PATH de Windows. El script generador no se versionó en el repositorio, solo los `.docx` resultantes.
+
+### Conclusión de la sesión
+
+Se agregaron tres artefactos nuevos de documentación (`docs/glosario.md`, `docs/glosario.docx`, `docs/TablaModulos_ElMapitaUTB.docx`) sin modificar código, configuración ni documentos existentes. Ningún archivo fue comiteado en esta sesión; queda pendiente que el equipo revise y corrija el contenido en Word antes de integrarlo al repositorio.
+
+### Fuentes
+
+`docs/arc42/arc42-template-EN.md` · `docs/aspectos.md` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md` · `correcciones.md` · `.github/workflows/ci.yml` · `backend/src/modules/*/domain/index.ts` · `frontend/lib/features/*/domain/entities.dart`
+
+---
+
+## 2026-09-07 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Diagnosticar la matriz de correcciones del corte 1** — El docente evaluó 12 criterios; 8 en "No cumple" y 3 en "No verificado". Se auditó cada uno contra el estado real del repositorio antes de responder.
+2. **Verificar el tag `corte-1` contra la observación del docente** — `git ls-remote --tags origin` confirma que el tag existe local y remotamente sobre el commit `d3be514`; la observación de que "no existe ninguna etiqueta" es incorrecta. Se distingue explícitamente el *mensaje* de commit `corte-1` (en `4806374`) de la *etiqueta* Git `corte-1` (en `d3be514`).
+3. **Verificar el PDF versionado** — `git ls-files docs/cortes/` confirma `docs/cortes/corte-1.pdf` (274 445 bytes) tracked en el repositorio; la observación de que no existe es incorrecta.
+4. **Diagnosticar la causa raíz del pipeline en rojo** — Vía `gh run view --log-failed` sobre la corrida `33520904103`: el job frontend falla en `flutter pub get` porque `.github/workflows/ci.yml` fija `FLUTTER_VERSION: "3.22.0"` (Dart 3.4) contra `frontend/pubspec.yaml` (`sdk: ^3.12.0`) y `frontend/pubspec.lock` (`flutter >=3.44.0`); el job backend falla en `npm run lint` porque `tseslint.configs.recommendedTypeChecked` marca como error ~10 usos de `any` en los adaptadores de Supabase (`supabase-repositories.ts`, controllers). Por decisión del equipo, no se corrige código ni configuración en este corte — el diagnóstico completo queda registrado en `correcciones.md` como deuda declarada.
+5. **Formalizar la restricción de rendimiento como reto del corte (RES-04)** — El equipo propone que la app funcione en el mayor rango posible de dispositivos móviles, incluyendo gama de entrada. Se documentó en `docs/arc42/arc42-template-EN.md` sección 2 junto con su impacto en requisitos (EC-01/EC-02), límites C4 (sin cambios) y código (deuda pendiente).
+6. **Redactar el ADR-0002** — Registrar la decisión de arquitectura que gobierna RES-04 (LOD + degradación progresiva a vista esquemática), contrastada contra dos alternativas, enlazando con el riesgo ya declarado RSK-02.
+7. **Reescribir `correcciones.md` como documento formal de réplica y deuda declarada** — Responder los 12 criterios de la matriz: rebatir 1 y 2 con evidencia ejecutable, señalar 3/5/7/11 como resueltos por los artefactos de hoy, y justificar técnicamente por qué 4/6/8/9/10 quedan pendientes sin tocar código en esta etapa de pruebas.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/arc42/arc42-template-EN.md`** | Fila `RES-04` en la tabla de restricciones (sección 2) + subsección "Impacto de RES-04" (requisitos, C4, código) |
+| **`docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md`** | ADR nuevo: LOD + degradación progresiva como estrategia para RES-04, alternativas contrastadas, consecuencias con estado de implementación pendiente declarado explícitamente |
+| **`correcciones.md`** | Reescrito de un borrador de 4 líneas a la réplica formal y tabla de deuda declarada para los 12 criterios de la matriz |
+| **`docs/ia.md`** | Esta entrada |
+
+### Conclusión de la sesión
+
+Ningún archivo de código, configuración ni CI fue modificado en esta sesión — se acordó explícitamente con el equipo mantener el alcance en documentación mientras el proyecto sigue en etapa de estabilización del esqueleto. Los criterios que exigen código o mediciones (4, 6, 8, 9, 10) quedan como deuda declarada con diagnóstico técnico verificable, no como omisiones sin explicar.
+
+### Fuentes
+
+`docs/aspectos.md` · `docs/arc42/arc42-template-EN.md` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `.github/workflows/ci.yml` · `correcciones.md`
+
+---
+
 ## 2026-08-31 — Sesión de trabajo con Muse Spark (OpenCode)
 
 ### Instrucciones del día (resumen)
