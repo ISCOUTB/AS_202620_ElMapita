@@ -4,6 +4,61 @@
 
 ---
 
+## 2026-09-13 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Reescribir por completo `docs/TablaModulos_ElMapitaUTB.docx`** — Reemplazar el catálogo de no conformidades inventado el día anterior por una lista real de 10 hallazgos (H-01…H-10) reportados por el panel de análisis estático de seguridad y confiabilidad del repositorio ("Security snapshot" / "Reliability snapshot"), suministrada íntegramente por el usuario.
+2. **Verificar cada hallazgo contra el código antes de escribirlo** — Se abrió cada archivo y línea señalados (`.github/workflows/ci.yml`, `frontend/android/app/build.gradle.kts`, `frontend/android/app/src/main/AndroidManifest.xml`, `frontend/android/build.gradle.kts`, `scripts/dev.sh`, `frontend/web/index.html`) para confirmar que el patrón reportado existe realmente antes de incluirlo en el documento.
+3. **Clasificar cada hallazgo como corrección real o falso positivo** — Para los reales, redactar un plan de corrección técnico y accionable; para los que resultaran falsos positivos, redactar una justificación en su lugar.
+4. **Dar formato académico al documento** — Títulos y subtítulos en negro (no en el azul institucional usado el día anterior), formato de reporte sobrio.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/TablaModulos_ElMapitaUTB.docx`** (reescrito por completo) | Tabla 1: 14 filas módulo × capa con dueño único; la columna "Hallazgos" ahora referencia los códigos H-01…H-10 en las dos únicas filas donde aplican (`infraestructura/CI-CD` y la nueva fila `configuración de plataforma Android/Web`), y "Sin hallazgos en este corte" en el resto. Tabla 2: resumen de hallazgos por dueño. Sección 3: ficha individual por hallazgo (archivo, línea, severidad, esfuerzo, descripción y plan de corrección o justificación) |
+| **`docs/ia.md`** | Esta entrada |
+
+### Hallazgos verificados y su clasificación
+
+| Código | Archivo | Severidad | Clasificación |
+|---|---|---|---|
+| H-01 | `.github/workflows/ci.yml` L90 | Alta (Seguridad) | Corrección real — pin del hash SHA de `subosito/flutter-action` |
+| H-02 | `.github/workflows/ci.yml` L134 | Alta (Seguridad) | Corrección real — pin del hash SHA de `lychee-action` |
+| H-03 | `frontend/android/app/build.gradle.kts` L29 | Alta (Seguridad) | Corrección real — habilitar ofuscación/minificación en `release` |
+| H-04 | `.github/workflows/ci.yml` L44 | Media (Seguridad) | Corrección real — `npm ci --ignore-scripts` (verificado: sin scripts `prepare`/`postinstall` en `backend/package.json`) |
+| H-05 | `.github/workflows/ci.yml` L100 | Media (Seguridad) | Corrección real — `flutter pub get --enforce-lockfile` |
+| H-06 | `AndroidManifest.xml` L2 | Media (Seguridad) | Corrección real — declarar `android:allowBackup="false"` explícitamente |
+| H-07 | `frontend/android/build.gradle.kts` | Media (Seguridad) | Corrección real — falta `gradle.lockfile` |
+| H-08 | `AndroidManifest.xml` L2 | Baja (Seguridad) | Corrección real — se comprobó que agrava el riesgo: `dio_client.dart` usa `http://localhost:3000/api` como URL base por defecto y `ci.yml` no la sobreescribe en el build web |
+| H-09 | `scripts/dev.sh` L21, L26, L32, L64 | Alta (Confiabilidad) | **Falso positivo** — las cuatro variables evaluadas con `[ ]` están citadas o son un contador numérico seguro; sin escenario de falla real en este script de desarrollo local |
+| H-10 | `frontend/web/index.html` L1 | Media (Confiabilidad) | Corrección real — falta atributo `lang` en `<html>` (WCAG 2.1 3.1.1) |
+
+### Decisiones y aclaraciones
+
+- **Mapeo de hallazgos a módulos/dueños:** ninguno de los 10 hallazgos toca código de dominio de `auth`/`mapas`/`pois`/`ubicacion`/`campus`; todos están en configuración de CI/CD o de plataforma (Android/Web), que ADR-0001 ya asigna a "Dev 3" (Angel Fabian Gutierrez Gomez). Se agregó una fila nueva a la Tabla 1, "configuración de plataforma (Android / Web)", para no forzar estos hallazgos dentro de una fila de módulo funcional a la que no pertenecen.
+- **Único falso positivo (H-09):** se documentó con justificación técnica verificada línea por línea, en vez de un plan de corrección, siguiendo la instrucción explícita del usuario de distinguir hallazgos reales de falsos errores.
+- **Se descartó** un catálogo de no conformidades anterior (redactado el 2026-09-12 a partir de inspección manual del código) al no ser la fuente que el usuario pidió reflejar en este documento; ese catálogo permanece únicamente en el historial de esta conversación, no en el repositorio.
+
+### Conclusión de la sesión
+
+Se reescribió `docs/TablaModulos_ElMapitaUTB.docx` en su totalidad a partir de una fuente externa (panel de análisis estático) verificada contra el código real, no comiteado todavía. `docs/glosario.md` y `docs/glosario.docx` no se modificaron en esta sesión.
+
+### Fuentes
+
+Panel de análisis estático de seguridad y confiabilidad del repositorio (snapshot suministrado por el usuario) · `.github/workflows/ci.yml` · `frontend/android/app/build.gradle.kts` · `frontend/android/app/src/main/AndroidManifest.xml` · `frontend/android/build.gradle.kts` · `frontend/lib/core/network/dio_client.dart` · `scripts/dev.sh` · `frontend/web/index.html` · `backend/package.json` · `docs/adr/0001-estilo-arquitectonico-propuesto.md`
+
+### Ajuste de formato posterior (misma sesión)
+
+Tras la primera versión de la Sección 3, se corrigió un detalle menor de redacción en la ficha de cada hallazgo: el encabezado mostraba "(línea L90)" en vez de "(L90)" (la etiqueta "línea" quedaba duplicada con el prefijo "L" del propio dato), y el hallazgo H-07 (sin línea específica) mostraba "(línea —)" en vez de omitir el paréntesis. Se regeneró `docs/TablaModulos_ElMapitaUTB.docx` con ambos ajustes; el contenido técnico de los 10 hallazgos no cambió.
+
+### Incidencia detectada y corregida: `docs/glosario.docx` desaparecido del disco
+
+Al revisar el estado de `docs/` tras la reescritura de `TablaModulos_ElMapitaUTB.docx`, se detectó que `docs/glosario.docx` — comiteado por el usuario el 2026-09-12 en el commit `3bdc57d` ("actualizacion de documentos para S06") — ya no existía en el sistema de archivos, aunque seguía tracked en Git (aparecía como `deleted` en `git status`). Esta sesión no había tocado ese archivo. Se restauró de forma no destructiva con `git checkout HEAD -- docs/glosario.docx`, recuperando exactamente el contenido ya comiteado, sin pérdida de información. Con esto, la afirmación de la sección "Conclusión de la sesión" de que `docs/glosario.docx` "no se modificó en esta sesión" se mantiene válida en cuanto a contenido (se recuperó el mismo binario comiteado, no se generó uno nuevo).
+
+---
+
 ## 2026-09-12 — Sesión de trabajo con Claude Code
 
 ### Instrucciones del día (resumen)
