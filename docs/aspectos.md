@@ -20,3 +20,14 @@ Actualmente, las personas que llegan por primera vez a la Universidad Tecnológi
 
 **Resultado esperado:** 
 La aplicación móvil (desarrollada en Flutter) debe cargar y renderizar un modelo 3D del edificio o zona seleccionada, mostrando claramente la distribución de los pisos (con escaleras y ascensores representados gráficamente). El sistema debe obtener la ubicación estimada del usuario a través de los servicios del dispositivo (o permitir la selección manual del punto de partida cuando la precisión no sea suficiente) y reflejarla mediante un puntero o marcador acompañado de su incertidumbre. La visualización debe permitir interacciones táctiles como rotación, zoom y cambio de piso. Los umbrales verificables de carga, fluidez, ubicación y disponibilidad están definidos en los escenarios EC-01 a EC-04 enlazados en la tabla de trazabilidad.
+
+---
+
+## Contrato de integración del aspecto A-01
+
+Las 16 operaciones REST que el frontend consume para renderizar edificios, pisos, POIs, ubicación y autenticación (módulos `mapas`, `pois`, `ubicacion`, `auth` — ver tabla de arriba) están fijadas en un contrato versionado:
+
+- **Contrato:** [`docs/api/openapi.v1.yaml`](api/openapi.v1.yaml) (OpenAPI 3.1)
+- **Justificación de la estrategia (OpenAPI vs AsyncAPI):** [ADR-0003](adr/0003-contrato-openapi-versionado.md)
+- **Prueba de contrato en el pipeline:** job `contract` en [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — lint del contrato (bloqueante), deriva contrato↔código y contrato↔runtime real (`continue-on-error` mientras RSK-04 esté abierto, ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
+- **Estado:** la prueba de contrato ya encontró una deriva real de prefijo de ruta entre frontend y backend, documentada en [`docs/api/README.md`](api/README.md) y en [`correcciones.md`](../correcciones.md)

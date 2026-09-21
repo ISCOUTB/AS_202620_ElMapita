@@ -76,10 +76,13 @@
 | **C4 (modelo)** | Notación para diagramar arquitectura de software en niveles de abstracción crecientes: Contexto, Contenedores, Componentes y Código. |
 | **C4 Nivel 1 (Contexto)** | Diagrama C4 que muestra el sistema como una caja negra y sus interacciones con usuarios y sistemas externos. |
 | **C4 Nivel 2 (Contenedor)** | Diagrama C4 que descompone el sistema en sus contenedores desplegables (aplicaciones, bases de datos, servicios) y las relaciones entre ellos. |
+| **Contrato de API (contract-first)** | Documento formal (OpenAPI o AsyncAPI) que fija de antemano la forma esperada de una integración —rutas, schemas, versión—, de modo que el código se verifica contra él en vez de que el contrato se infiera del código ya escrito. En El Mapita UTB es `docs/api/openapi.v1.yaml` (ver ADR-0003). |
 | **Decisión (DEC)** | Elección arquitectónica registrada en la matriz de decisiones del arc42, con su estado (aceptada, rechazada) y justificación. |
+| **Deriva de contrato** | Discrepancia entre lo que un contrato de API documenta y lo que el código realmente expone en tiempo de ejecución; se detecta comparando el contrato contra un documento generado desde el código (`npm run openapi:drift`) o ejerciendo las rutas reales (`npm run test:contracts`). |
 | **Escenario de Calidad (EC)** | Enunciado verificable que describe un estímulo, el contexto y la respuesta esperada del sistema para un atributo de calidad concreto (rendimiento, disponibilidad, confiabilidad). |
 | **Interfaz (IF)** | Punto de integración documentado entre dos contenedores o entre el sistema y un servicio externo, con su protocolo y propósito. |
 | **Matriz de Trazabilidad** | Tabla que enlaza cada aspecto con su requisito, escenarios de calidad, vistas C4, ADR, código fuente, pruebas y evidencia. |
+| **Prueba de Contrato** | Verificación automatizada, corrida en el pipeline, de que la implementación real de una API cumple lo que su contrato versionado declara (rutas existentes, formas de request/response válidas contra los schemas). |
 | **Requisito Funcional (RF)** | Capacidad concreta que el sistema debe ofrecer al usuario, derivada de un aspecto. |
 | **Restricción (RES)** | Condición impuesta al proyecto (académica, física, tecnológica u operacional) que limita el espacio de soluciones arquitectónicas posibles. |
 | **Riesgo (RSK)** | Situación identificada que podría comprometer la calidad o viabilidad del sistema, junto con su nivel de impacto y estrategia de mitigación. |
@@ -92,17 +95,20 @@
 | **A-01** | Identificador del aspecto único del proyecto: "Visualización interactiva del campus en 3D con geolocalización en tiempo real". |
 | **ADR-0001** | Registro de decisión arquitectónica que documenta la adopción de Monolito Modular para backend y frontend. |
 | **ADR-0002** | Registro de decisión arquitectónica que documenta la estrategia frente a la restricción de rendimiento en dispositivos de gama de entrada (RES-04). |
-| **DEC-01 … DEC-06** | Numeración de las seis decisiones arquitectónicas registradas en la matriz de decisiones del arc42, cada una vinculada a un ADR. |
+| **ADR-0003** | Registro de decisión arquitectónica que documenta la estrategia de contrato de integración FE-BE: OpenAPI 3.1 versionado con prueba de contrato en el pipeline (DEC-07). |
+| **DEC-01 … DEC-07** | Numeración de las siete decisiones arquitectónicas registradas en la matriz de decisiones del arc42, cada una vinculada a un ADR. |
 | **EC-01 … EC-04** | Numeración de los cuatro escenarios de calidad del proyecto: carga inicial, fluidez de render, precisión de ubicación y disponibilidad sin conexión. |
 | **IF-01 … IF-05** | Numeración de las cinco interfaces documentadas entre los contenedores del sistema y los servicios externos. |
 | **RES-01 … RES-04** | Numeración de las cuatro restricciones del proyecto: académica, física/tecnológica, operacional y de rendimiento en gama de entrada. |
 | **RF-01** | Identificador del requisito funcional derivado del aspecto A-01. |
-| **RSK-01 … RSK-03** | Numeración de los tres riesgos arquitectónicos identificados: complejidad de modelos 3D, disparidad de hardware GPU y dependencia de Supabase. |
+| **RSK-01 … RSK-04** | Numeración de los cuatro riesgos arquitectónicos identificados: complejidad de modelos 3D, disparidad de hardware GPU, dependencia de Supabase y deriva de contrato de API (prefijo de ruta duplicado). |
 
 ## 6. Tecnologías y herramientas
 
 | Término | Definición |
 |---|---|
+| **Ajv** | Librería de validación de JSON Schema para JavaScript/TypeScript; usada en `backend/test/contract/openapi.contract-spec.ts` para validar respuestas reales contra los schemas del contrato OpenAPI 3.1. |
+| **AsyncAPI** | Estándar análogo a OpenAPI para documentar contratos de integración asíncrona basada en eventos (colas, tópicos, WebSockets). Evaluado y descartado por ahora en ADR-0003: la integración actual es 100% REST síncrona y Supabase Realtime sigue siendo deuda (ADR-0002). |
 | **BaaS (Backend as a Service)** | Modelo de computación en la nube donde los servicios de backend (autenticación, base de datos, almacenamiento de archivos) son provistos como servicios administrados (por ejemplo, Supabase). |
 | **Bucket `modelos-3d`** | Contenedor de almacenamiento en Supabase Storage donde se publican los archivos de modelos 3D del campus. |
 | **Dart** | Lenguaje de programación en el que está escrita la aplicación móvil con Flutter. |
@@ -116,9 +122,11 @@
 | **Jest** | Framework de pruebas para JavaScript/TypeScript usado en el backend para pruebas unitarias y end-to-end. |
 | **lychee** | Herramienta de verificación de enlaces usada en el job de documentación del pipeline para detectar enlaces rotos. |
 | **NestJS** | Framework progresivo de Node.js para la construcción de aplicaciones del lado del servidor escalables, estructurado con TypeScript e inyección de dependencias. |
+| **OpenAPI** | Estándar para describir APIs REST de forma independiente del lenguaje (rutas, parámetros, schemas de request/response, seguridad). El Mapita UTB usa la versión 3.1 (JSON Schema 2020-12 nativo) como contrato versionado en `docs/api/openapi.v1.yaml` (ver ADR-0003). |
 | **PostGIS** | Extensión espacial para el sistema de base de datos relacional PostgreSQL que añade soporte para objetos geográficos, permitiendo ejecutar consultas espaciales en SQL. |
 | **PostgreSQL** | Sistema de gestión de bases de datos relacionales de código abierto sobre el que se construye Supabase. |
 | **PostgREST** | Servidor web independiente que transforma una base de datos PostgreSQL directamente en una API RESTful. |
+| **Redocly CLI** | Herramienta de línea de comandos usada en el job `contract` del pipeline para validar (`lint`) que `docs/api/openapi.v1.yaml` sea un documento OpenAPI 3.1 sintácticamente correcto. |
 | **Supabase** | Alternativa de código abierto a Firebase construida sobre PostgreSQL, que provee autenticación, base de datos, almacenamiento, funciones y capacidades en tiempo real. |
 | **Supabase Realtime** | Servicio de Supabase que distribuye eventos de cambios en la base de datos a los clientes suscritos mediante WebSockets. |
 | **TypeScript** | Superset tipado de JavaScript en el que está escrito el backend construido con NestJS. |

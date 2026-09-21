@@ -219,3 +219,51 @@ Criterio pragmático: no optimizar por pureza técnica sino por viabilidad real 
 ### Fuentes
 
 `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `docs/arc42/arc42-template-EN.md` S1-S3 · `docs/comparativa-de-arquitecturas.md`
+
+---
+
+## 2026-09-20 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+1. **Elegir entre OpenAPI y AsyncAPI versionado** para el contrato de integración FE-BE, con contexto de la presentación "Introducción a WWW" del curso.
+2. **Escribir el contrato versionado** como archivo en el repositorio (no solo Swagger en memoria).
+3. **Añadir prueba de contrato en el pipeline** (CI).
+4. **Redactar un ADR que justifique la estrategia de integración elegida.**
+
+### Exploración previa a la propuesta
+
+Antes de proponer un plan, se inspeccionó el backend real (`backend/src/main.ts`, los 5 controladores, `package.json`, `.github/workflows/ci.yml`) para fundamentar la elección en el código existente, no en una preferencia genérica. Esa exploración encontró que el frontend (`dio_client.dart` + `*_api.dart`) y el backend estaban desalineados en producción: el backend expone `/api/api/v1/...` y `/api/health` (prefijo `api` duplicado por `setGlobalPrefix` + prefijo de controlador) donde el frontend y la documentación (README, C4 Nivel 3) esperan `/api/v1/...` y `/health`.
+
+### Decisiones tomadas con el usuario (`AskUserQuestion`)
+
+- **Estándar:** OpenAPI 3.1 (no AsyncAPI) — la integración real es 100% REST síncrona; AsyncAPI se reserva para cuando Supabase Realtime deje de ser deuda (ADR-0002).
+- **Profundidad de la prueba de contrato:** las tres capas (lint del contrato, deriva contrato↔código generado desde NestJS, y contrato↔runtime real con fakes sobre los puertos ya desacoplados por DEC-02).
+- **Desajuste de prefijo de ruta encontrado:** documentar como deuda (RSK-04), sin corregir código de la aplicación en esta entrega.
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`docs/api/openapi.v1.yaml`** | Contrato OpenAPI 3.1 con las 16 operaciones reales de los 5 controladores, schemas derivados de los tipos de dominio existentes (`backend/src/modules/*/domain/index.ts`), regla de versionado MAJOR/MINOR/PATCH. |
+| **`docs/api/README.md`** | Índice del contrato: regla de versionado, cómo correr las 3 capas de verificación en local, estado de RSK-04. |
+| **`docs/adr/0003-contrato-openapi-versionado.md`** | ADR con la justificación completa: alternativas consideradas (statu quo, OpenAPI contract-first, AsyncAPI, code-first puro), decisión y consecuencias, incluyendo el hallazgo de deriva como evidencia. |
+| **`backend/scripts/generate-openapi.ts`, `check-openapi-drift.ts`** | Generan el documento real desde los decoradores de NestJS (mismo bootstrap que `main.ts`) y lo comparan contra el contrato. |
+| **`backend/test/contract/openapi.contract-spec.ts`** | Levanta la app completa con fakes sobre los 6 puertos hacia Supabase, ejerce las 16 rutas del contrato con supertest y valida respuestas con Ajv (JSON Schema 2020-12). Corrida localmente: falla en las 16, confirmando la deriva de prefijo — resultado esperado. |
+| **`.github/workflows/ci.yml`** | Job `contract` nuevo (lint bloqueante + deriva/runtime informativos mientras RSK-04 esté abierto), agregado a `quality-gate.needs`. |
+| **Trazabilidad** | `docs/arc42/arc42-template-EN.md` (DEC-07, RSK-04), `docs/glosario.md` (ADR-0003, OpenAPI, AsyncAPI, Ajv, Redocly CLI, contrato de API, deriva de contrato, prueba de contrato), `docs/aspectos.md` (sección de contrato del aspecto A-01), `correcciones.md` (deuda RSK-04 y criterio de cierre). |
+
+### Decisiones y aclaraciones
+
+- El PDF de origen (`Introducción a WWW.pdf`, en Descargas del usuario) no pudo abrirse por un nombre de archivo con acento en forma Unicode descompuesta que ninguna herramienta local resolvió; se contextualizó la elección directamente con el código del proyecto en su lugar.
+- Se validó el contrato con `npx @redocly/cli lint` (0 errores, 14 advertencias de estilo no bloqueantes) y se ejecutaron las tres capas de verificación localmente antes de cerrar la sesión, confirmando que reproducen exactamente la deriva documentada.
+
+### Seguimiento — lectura de la presentación fuente (mismo día)
+
+El usuario renombró el archivo a `Introduccion a WWW.pdf` (sin tilde), lo que permitió leerlo. Contenido: "Arquitecturas de Aplicaciones Web — HTTP y WWW" (Jairo Serrano, PhD., UTB) — ciclo de petición/respuesta cliente-servidor, métodos HTTP (GET/POST/PUT/DELETE/HEAD), códigos de estado por familia (1xx-5xx) e introducción a Flask.
+
+**Conclusión:** el material es fundamento conceptual de HTTP (no trata contratos de API versionados ni OpenAPI/AsyncAPI), por lo que confirma sin contradecir la decisión ya tomada — el contrato (`openapi.v1.yaml`) documenta exactamente esos mismos elementos (método, ruta, código de respuesta por familia) para cada operación real del backend. No se modificó ningún artefacto de la entrega a raíz de esta lectura.
+
+### Fuentes
+
+`backend/src/main.ts` · `backend/src/modules/*/interfaces/*.controller.ts` · `backend/src/modules/*/domain/index.ts` · `frontend/lib/core/network/dio_client.dart` · `frontend/lib/features/mapas/infrastructure/api/mapas_api.dart` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md` · `.github/workflows/ci.yml` · `Introduccion a WWW.pdf` (presentación del curso, Jairo Serrano PhD.)

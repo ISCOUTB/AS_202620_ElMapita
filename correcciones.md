@@ -98,3 +98,24 @@ Sin acción del equipo — lo resuelve el docente en la sesión de sustentación
 | 6 | Implementación end-to-end de RES-04 (LOD + degradación progresiva) sobre el esqueleto ya estable | Adaptador `MapRenderer` |
 | 4, 9 | Primera línea base medida de EC-01/EC-02 (carga y fluidez) sobre dispositivo real, contrastada contra los umbrales ya definidos | Renderizado 3D real implementado |
 | 10 | Columnas `Pruebas` y `Evidencia` de `docs/aspectos.md` completas para las 4 filas | Resultado de 4, 6 y 9 |
+
+---
+
+## 5. Deuda declarada — Contrato de API (2026-09-20)
+
+No es respuesta a un criterio de la matriz de evaluación del corte 1; se documenta aquí por ser exactamente el tipo de deuda que este archivo existe para rastrear, encontrada al implementar el entregable "contrato OpenAPI versionado + prueba de contrato en pipeline + ADR" ([ADR-0003](docs/adr/0003-contrato-openapi-versionado.md)).
+
+**Qué se encontró:** al escribir `docs/api/openapi.v1.yaml` con las rutas que el frontend realmente consume (`dio_client.dart` + `*_api.dart`), y comparar contra lo que el backend expone, aparecen dos desajustes de prefijo de ruta:
+
+| Endpoint | Frontend consume | Backend expone |
+|---|---|---|
+| Cualquier ruta de módulo (ejemplo: listar edificios) | `GET /api/v1/map/buildings` | `GET /api/api/v1/map/buildings` |
+| Health check | `GET /health` | `GET /api/health` |
+
+Causa: `backend/src/main.ts` aplica `setGlobalPrefix('api')` global, y los 4 controladores de módulo (`auth`, `mapas`, `pois`, `ubicacion`) ya declaran `@Controller('api/v1/...')` — el prefijo se duplica. `HealthController` no está excluido del prefijo global aunque toda la documentación (README, C4 Nivel 3) lo describe sin prefijo.
+
+**Por qué no se corrige en esta entrega:** el alcance de esta entrega es el contrato, su versionado y su verificación en el pipeline — no una corrección de rutas de producción, que merece su propia revisión (afecta a los 4 controladores y potencialmente a URLs ya integradas). Se prioriza dejar el mecanismo de detección funcionando (el objetivo del entregable) sobre corregir silenciosamente el síntoma.
+
+**Registrado como:** RSK-04 ([arc42 §11](docs/arc42/arc42-template-EN.md#section-technical-risks)). La prueba de contrato (`npm run openapi:drift` y `npm run test:contracts`, job `contract` en `ci.yml`) señala esta deriva en cada corrida, con `continue-on-error: true`.
+
+**Qué lo desbloquea:** quitar el prefijo `api/` de los 4 controladores de módulo (o ajustar `setGlobalPrefix`), y excluir o incluir `HealthController` de forma consistente con lo documentado. Al hacerlo, cambiar `continue-on-error: true` a `false` en los pasos `openapi:drift` y `test:contracts` de `ci.yml`, para que la prueba de contrato pase a ser bloqueante.
