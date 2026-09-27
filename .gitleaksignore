@@ -14,3 +14,8 @@ aa16382499acb17fc8c20369916d8b4b0697f742:backend/README.md:generic-api-key:5
 # la propia documentación. Ya corregido en el archivo (ver nota de
 # redacción dentro del ADR), pero el commit histórico permanece.
 beb105cc799e3511b2a1c54b6c61172f4ac8aa24:docs/adr/0004-despliegue-render-docker.md:generic-api-key:69
+
+# Falso positivo: docs/ia.md también citó textualmente el mismo token de
+# ejemplo al narrar el hallazgo anterior. Ya reescrito en el archivo, pero
+# el commit histórico permanece.
+166ce9e63872714fafa2e2ecae9a2bbb0edac462:docs/ia.md:generic-api-key:361
