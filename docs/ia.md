@@ -372,6 +372,20 @@ El pipeline en verde no fue el final de la historia: el primer deploy real contr
 
 También se detectó y arregló (fuera de lo esperado): una llave de servicio (`SUPABASE_SERVICE_ROLE_KEY`) mal puesta en Render por confusión con la nomenclatura nueva de Supabase (`publishable`/`secret` en vez de `anon`/`service_role`), y un fingerprint más de gitleaks por auto-referencia en este mismo archivo.
 
+### Seguimiento — deploy exitoso y verificación externa real (mismo día, cierre de la entrega)
+
+Tras subir a Node 22, el usuario compartió captura del dashboard de Render mostrando **"Deploy succeeded"** (commit `b35f784`, 1m04s) y logs reales del health check instrumentado: `health check: consulta a Supabase resuelta en 367ms (error=false)` seguido de `health check: respondiendo 200 en 367ms total` (y una segunda petición en 290ms) — la instrumentación agregada específicamente para diagnosticar el problema fue la que confirmó, con evidencia de logs, que quedó resuelto.
+
+Se ejecutó verificación independiente desde este mismo entorno (que no está en la red de la UTB, cumpliendo el requisito de "el evaluador la abre desde su casa"):
+
+- `curl -s -i https://elmapita-utb-api.onrender.com/health` → `HTTP/1.1 200 OK`, cuerpo `{"status":"ok","timestamp":"2026-09-27T22:17:25.314Z","checks":{"supabase":"ok"}}`.
+- `curl -s https://elmapita-utb-api.onrender.com/metrics` → datos Prometheus reales y en vivo (`process_cpu_user_seconds_total`, histograma `http_request_duration_seconds`, etc.).
+- `curl -s https://elmapita-utb-api.onrender.com/api/v1/map/buildings` → `200 OK` con datos reales del edificio sembrado ("Edificio de Ingenierias", código `ING`), confirmando que no solo el health check sino un endpoint de negocio real funciona de punta a punta contra el Supabase de producción del usuario.
+
+Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzable desde fuera de la red UTB (verificada), IaC versionada, pipeline en verde con gate, health check honesto, logs estructurados, métrica consultable y secretos fuera del código — los 7 puntos pedidos por el enunciado.
+
+**Deuda declarada, no bloqueante, señalada al usuario al cierre:** rotar `SUPABASE_SECRET_KEY` (se compartió en texto plano en el chat durante el troubleshooting) y versionar el esquema SQL de Supabase como migraciones en vez de dejarlo como script manual ejecutado a mano en el SQL Editor.
+
 ### Fuentes
 
-`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651, 36351332554
+`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651, 36351332554 · Deploy real verificado en `https://elmapita-utb-api.onrender.com` (`/health`, `/metrics`, `/api/v1/map/buildings`) vía `curl` ejecutado directamente desde este entorno
