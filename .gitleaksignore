@@ -8,3 +8,9 @@
 # eliminó del README (era una referencia Markdown sin usar), pero el
 # fingerprint permanece en el historial de git en el commit que la introdujo.
 aa16382499acb17fc8c20369916d8b4b0697f742:backend/README.md:generic-api-key:5
+
+# Falso positivo: el ADR-0004 citaba textualmente el valor del hallazgo
+# anterior al explicarlo, lo que vuelve a disparar la misma regla sobre
+# la propia documentación. Ya corregido en el archivo (ver nota de
+# redacción dentro del ADR), pero el commit histórico permanece.
+beb105cc799e3511b2a1c54b6c61172f4ac8aa24:docs/adr/0004-despliegue-render-docker.md:generic-api-key:69
