@@ -52,11 +52,38 @@ paths:
       security: []
       responses:
         '200':
-          description: Servicio saludable o degradado
+          description: Servicio saludable
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Servicio degradado o caído (p.ej. Supabase inaccesible)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /metrics:
+    get:
+      tags: [Health]
+      operationId: metrics
+      summary: Métricas Prometheus (EC-01 — latencia de /api/v1/map/*)
+      description: |
+        Formato de exposición Prometheus (texto plano), no JSON. Incluye
+        `http_request_duration_seconds{method,route,status_code}`, el
+        histograma que mide la latencia de cada ruta — en particular
+        `GET /api/v1/map/buildings/{buildingId}` y
+        `GET /api/v1/map/floors/{floorId}/model`, de las que depende EC-01
+        (ver ADR-0003, ADR-0004).
+      security: []
+      responses:
+        '200':
+          description: Métricas en formato de exposición Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /api/v1/auth/signin:
     post:

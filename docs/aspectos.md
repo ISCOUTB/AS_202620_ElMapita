@@ -25,9 +25,19 @@ La aplicación móvil (desarrollada en Flutter) debe cargar y renderizar un mode
 
 ## Contrato de integración del aspecto A-01
 
-Las 16 operaciones REST que el frontend consume para renderizar edificios, pisos, POIs, ubicación y autenticación (módulos `mapas`, `pois`, `ubicacion`, `auth` — ver tabla de arriba) están fijadas en un contrato versionado:
+Las 17 operaciones REST (16 de negocio + `/metrics`) que el frontend consume para renderizar edificios, pisos, POIs, ubicación y autenticación (módulos `mapas`, `pois`, `ubicacion`, `auth` — ver tabla de arriba) están fijadas en un contrato versionado:
 
 - **Contrato:** [`docs/api/openapi.v1.yaml`](api/openapi.v1.yaml) (OpenAPI 3.1)
 - **Justificación de la estrategia (OpenAPI vs AsyncAPI):** [ADR-0003](adr/0003-contrato-openapi-versionado.md)
-- **Prueba de contrato en el pipeline:** job `contract` en [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — lint del contrato (bloqueante), deriva contrato↔código y contrato↔runtime real (`continue-on-error` mientras RSK-04 esté abierto, ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
-- **Estado:** la prueba de contrato ya encontró una deriva real de prefijo de ruta entre frontend y backend, documentada en [`docs/api/README.md`](api/README.md) y en [`correcciones.md`](../correcciones.md)
+- **Prueba de contrato en el pipeline:** job `contract` en [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — lint del contrato, deriva contrato↔código y contrato↔runtime real, las 3 capas bloqueantes (RSK-04 cerrado, ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
+- **Estado:** la prueba de contrato encontró y permitió cerrar una deriva real de prefijo de ruta entre frontend y backend, documentada en [`docs/api/README.md`](api/README.md) y en [`correcciones.md`](../correcciones.md)
+
+## Despliegue y operación del aspecto A-01
+
+El backend que sirve estas 17 operaciones está desplegado como contenedor Docker en Render, con las señales mínimas de operación que EC-01 necesita para ser medible fuera de `localhost`:
+
+- **Infraestructura como código:** [`render.yaml`](../render.yaml) + [`backend/Dockerfile`](../backend/Dockerfile)
+- **Justificación de la estrategia (plataforma, contenedor vs función):** [ADR-0004](adr/0004-despliegue-render-docker.md)
+- **Health check honesto:** `GET /health` responde 503 real si Supabase es inaccesible (antes siempre 200)
+- **Métrica ligada a EC-01:** `GET /metrics` — histograma `http_request_duration_seconds` para `GET /api/v1/map/buildings/{buildingId}` y `GET /api/v1/map/floors/{floorId}/model`
+- **Riesgo:** RSK-05 — cold start del plan free de Render puede violar el p95 de EC-01 en la primera petición tras inactividad (ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))

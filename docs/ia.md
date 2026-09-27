@@ -312,3 +312,46 @@ Al corregir RSK-04, las peticiones llegaron por primera vez a los controladores 
 ### Fuentes
 
 `backend/src/modules/*/application/use-cases.ts` · `backend/src/main.ts` · `backend/scripts/{generate-openapi,check-openapi-drift}.ts` · `backend/test/contract/openapi.contract-spec.ts` · `.github/workflows/ci.yml` · `correcciones.md` (Criterio 8, sección 5) · `docs/adr/0003-contrato-openapi-versionado.md` · GitHub Actions run 35549974182
+
+---
+
+## 2026-09-27 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+Analizar dos presentaciones del curso ("S08-despliegue-y-operacion" y "Serverless Architectures") y, con base en ellas, armar un plan para: URL del sistema desplegado y accesible desde fuera de la red UTB, infraestructura como código versionada, pipeline en verde, health check, logs estructurados, métrica consultable, evidencia de protección de secretos y estimación de costo mensual con supuestos — siguiendo el apartado "Cómo estimar el costo mensual" de la "Guía de despliegue y costos" (no disponible; se confirmó con el usuario y se usó una metodología estándar en su lugar).
+
+### Prerrequisito ejecutado primero
+
+Las correcciones preparadas en la sesión anterior (RSK-04, bug de DI, lint, Flutter) seguían sin commitear/pushear. Se commitearon y pushearon a `main` (commit `9ee88c5`) antes de empezar nada de despliegue — sin eso, "pipeline en verde" era imposible.
+
+### Hallazgos durante la implementación (no estaban en el plan original)
+
+1. **`backend/src/health.controller.ts` mentía**: siempre respondía `200 OK` aunque Supabase estuviera inaccesible. Corregido con `ServiceUnavailableException` → 503 real, verificado tanto en local como corriendo dentro del contenedor Docker.
+2. **`tsconfig.build.json` no excluía `backend/scripts/`** (agregado en la sesión anterior), lo que rompía silenciosamente `npm run start:prod` desde entonces (`dist/main` no existía, quedaba en `dist/src/main`). Nunca se había ejecutado el build empaquetado hasta que se preparó el Dockerfile — se detectó al intentar correr `node dist/main` de verdad.
+3. **Bug propio en el interceptor de métricas**: `HttpMetricsInterceptor` leía `response.statusCode` en la rama de error antes de que el filtro de excepciones de Nest lo escribiera, así que todo error se etiquetaba como `200` en `/metrics`. Corregido leyendo el status desde `HttpException.getStatus()` en un `catchError`, verificado con el 503 real del health check.
+4. **`nestjs-pino@5.x` exige Node ≥22.12**, incompatible con el Node 20 de `ci.yml`/Dockerfile (`npm warn EBADENGINE` al construir la imagen). Se fijó en `4.6.1` (soporta Node ≥14).
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **`backend/Dockerfile` + `.dockerignore`** | Build multi-stage sobre `node:20-alpine`, usuario no-root. Verificado con `docker build` + `docker run` reales (no solo `npm run build`). |
+| **`render.yaml`** | Blueprint de Render (IaC): `runtime: docker`, `healthCheckPath: /health`, secretos con `sync: false`. |
+| **Logs estructurados** | `nestjs-pino` + `pino-http`, JSON por línea con método/ruta/status/latencia automáticos, secretos redactados, `/health` y `/metrics` excluidos del autologging. |
+| **Métrica consultable** | `@willsoto/nestjs-prometheus` en `GET /metrics`, histograma `http_request_duration_seconds` ligado explícitamente a EC-01 (`GET /api/v1/map/buildings/{id}`, `GET /api/v1/map/floors/{id}/model`). |
+| **`docs/api/openapi.v1.yaml`** | +1 operación (`GET /metrics`); contrato sigue en 0 deriva tras excluir `metrics` del prefijo global igual que `health` en los 3 bootstraps (`main.ts`, `generate-openapi.ts`, el test de contrato). |
+| **`.github/workflows/ci.yml`** | Jobs nuevos `secrets` (gitleaks) y `docker` (build de la imagen real), agregados a `quality-gate.needs`. |
+| **Branch protection en `main`** | `required_status_checks` (check `Quality Gate (EC-01..EC-04)`) + `required_pull_request_reviews` (0 aprobaciones requeridas, pero fuerza flujo de PR) vía `gh api`. Cambia el flujo del equipo: ya no se acepta push directo sin que el check corra. |
+| **`docs/adr/0004-despliegue-render-docker.md`** | ADR completo: alternativas (Render vs Fly.io vs Railway vs servidor de laboratorio), decisión, tabla de costo mensual ($0 bajo los supuestos, con puntos de cruce), runbook paso a paso para el despliegue real. |
+| **Trazabilidad** | arc42 (DEC-08, RSK-05), `docs/glosario.md` (ADR-0004, IaC, Docker, Render, pino, Prometheus, health check honesto, cold start, gitleaks), `docs/aspectos.md` (sección de despliegue del aspecto A-01), `correcciones.md` (sección 6: bug de `tsconfig.build.json` y cambio de flujo por branch protection). |
+
+### Decisiones y aclaraciones
+
+- La "Guía de despliegue y costos" del curso no está disponible; la estimación de costo usa metodología estándar (componente × supuesto de tráfico × costo/mes × punto de cruce), documentada como tal para reconciliar si la guía aparece.
+- El despliegue real en Render requiere una cuenta que solo el usuario puede crear — se preparó todo el código/IaC y se verificó localmente (incluido correr el contenedor Docker real), y se dejó un runbook exacto en el ADR-0004 para que el usuario haga el deploy final.
+- Los 4 pasos verificados de punta a punta (no solo "compila"): build de imagen Docker, contenedor corriendo respondiendo `/health` (503 real) y `/metrics` (histograma con datos reales) desde dentro del contenedor en Node 20, y las 17 operaciones del contrato en verde tras los cambios.
+
+### Fuentes
+
+`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf"

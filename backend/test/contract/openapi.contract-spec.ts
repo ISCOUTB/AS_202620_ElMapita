@@ -271,7 +271,7 @@ describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () =>
     app = moduleFixture.createNestApplication();
     // Mismo bootstrap que src/main.ts — si diverge de aquí, esta prueba
     // deja de reflejar lo que se despliega realmente (ver comentario arriba).
-    app.setGlobalPrefix('api', { exclude: ['health'] });
+    app.setGlobalPrefix('api', { exclude: ['health', 'metrics'] });
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

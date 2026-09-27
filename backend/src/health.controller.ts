@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { getSupabaseClient } from './shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
@@ -31,6 +31,13 @@ export class HealthController {
 
     const isHealthy = checks.checks.supabase === 'ok';
     checks.status = isHealthy ? 'ok' : 'degraded';
+
+    // El orquestador (Render) decide si manda tráfico según el código HTTP,
+    // no según el cuerpo — un 200 con "degraded" adentro es un health check
+    // que miente (ver S08: "apaguen la base de datos y miren qué devuelve").
+    if (!isHealthy) {
+      throw new ServiceUnavailableException(checks);
+    }
 
     return checks;
   }

@@ -1,0 +1,30 @@
+# Infraestructura como código — El Mapita UTB Backend API
+# Blueprint de Render (https://render.com/docs/blueprint-spec). Importar este
+# archivo en Render ("New +" -> "Blueprint") reproduce el despliegue completo.
+# Justificación de la elección de plataforma/contenedor: docs/adr/0004-despliegue-render-docker.md
+#
+# Los envVars con `sync: false` son secretos: Render pide su valor una sola
+# vez en el dashboard al crear el servicio y nunca los persiste en este
+# archivo ni en git (ver docs/adr/0004 sección "Evidencia de secretos").
+
+services:
+  - type: web
+    name: elmapita-utb-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: FRONTEND_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
