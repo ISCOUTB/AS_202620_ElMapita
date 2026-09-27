@@ -146,6 +146,15 @@ Entregable de la Semana 8 ("Despliegue y operación"): URL pública, IaC version
 
 **Evidencia final:** [run 36303969651](https://github.com/ISCOUTB/AS_202620_ElMapita/actions/runs/36303969651) — primer pipeline completo en verde del proyecto (7/7 jobs, incluido `Quality Gate`).
 
+## 8. Deploy real en Render: dos bugs encontrados solo al desplegar de verdad (2026-09-27)
+
+Ninguno de los dos aparecía en local ni en CI — solo se manifestaron desplegando en la infraestructura real de Render, sobre un proyecto de Supabase nuevo del usuario (`RobotDRMX`, sin acceso de la GitHub App a la organización ISCOUTB, por eso el deploy se hizo desde un fork personal: `RobotDRMX/AS_202620_ElMapita`).
+
+1. **Esquema de base de datos vacío.** El proyecto de Supabase nuevo no tenía las tablas `edificios`/`pisos`/`pois` (el repo nunca versionó el esquema — ver hallazgo aparte más abajo). El health check honesto (ADR-0004 §2) hizo justo lo que debía: marcar 503 en vez de mentir. Se resolvió corriendo el DDL + datos de ejemplo manualmente en el SQL Editor de Supabase — no existe migración versionada en el repo todavía (deuda declarada: el esquema de base de datos no es IaC, a diferencia del contenedor/despliegue).
+2. **`node:20-alpine` colgaba las peticiones salientes a Supabase.** Con el esquema ya arreglado, el health check seguía sin responder — Render lo marcaba "Timed Out" esperando `/health`, pero la misma llamada a la API REST de Supabase respondía en 148ms probada directo desde fuera del contenedor. Causa: bug conocido de resolución DNS de `musl` (la libc de Alpine) que cuelga conexiones salientes en redes de nube. Se corrigió cambiando la base de `backend/Dockerfile` a `node:20-slim` (Debian/glibc); verificado localmente corriendo el contenedor contra el proyecto real de Supabase.
+
+**Qué lo desbloquea (deuda declarada — esquema de BD sin IaC):** agregar `supabase/migrations/*.sql` versionadas al repo (o al menos un `schema.sql` documentado), en vez de depender de que cada quien corra el DDL a mano en el SQL Editor.
+
 ## 7. Deuda declarada — Frontend: dos funcionalidades incompletas detectadas por `flutter analyze` (2026-09-27)
 
 Al activar branch protection (sección 6), el pipeline necesitaba estar realmente en verde por primera vez, incluido el job Frontend — que llevaba tiempo fallando en CI sin que nadie lo notara (nadie hacía push que dependiera de que pasara). `flutter analyze` señala 3 warnings de campos no usados que, al revisar el código, **no son descuido trivial**:
