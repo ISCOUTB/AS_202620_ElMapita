@@ -18,12 +18,11 @@ import type {
   Model3DStorage,
   ModelVersion,
 } from '../../src/modules/mapas/domain';
-import type { Poi, PoiId, PoiRepository, PoiType } from '../../src/modules/pois/domain';
+import type { Poi, PoiId, PoiRepository } from '../../src/modules/pois/domain';
 import type {
   AuthTokens,
   SupabaseAuthClient,
   User,
-  UserRole,
 } from '../../src/modules/auth/domain';
 
 /**
@@ -33,10 +32,12 @@ import type {
  * servidor realmente expone. Los puertos hacia Supabase (DEC-02) se
  * sustituyen por fakes en memoria: no requiere credenciales reales.
  *
- * Hoy falla a propósito: documenta la deriva de prefijo (/api/api/v1 y
- * /api/health) descrita en docs/adr/0003-contrato-openapi-versionado.md
- * y RSK-04 (arc42). Ver ci.yml (job `contract`, continue-on-error) y
- * correcciones.md para el criterio de cierre de esta deuda.
+ * RSK-04 (arc42) — deriva de prefijo de ruta (/api/api/v1 y /api/health) —
+ * se cerró corrigiendo los 4 controladores y excluyendo 'health' del
+ * prefijo global (ver docs/adr/0003-contrato-openapi-versionado.md,
+ * sección "Cierre de RSK-04"). Esta prueba corre en verde por eso mismo;
+ * el run que la capturó en rojo antes del fix queda como evidencia
+ * histórica citada en el ADR.
  */
 
 const BUILDING_ID = '11111111-1111-1111-1111-111111111111' as BuildingId;
@@ -47,7 +48,17 @@ const fakeBuilding: Building = {
   id: BUILDING_ID,
   nombre: 'Edificio de Ingenierías',
   codigo: 'ING',
-  geometria: { type: 'Polygon', coordinates: [[[0, 0], [0, 1], [1, 1], [0, 0]]] },
+  geometria: {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [0, 0],
+        [0, 1],
+        [1, 1],
+        [0, 0],
+      ],
+    ],
+  },
   pisos: [FLOOR_ID],
   versionModelo3D: 'v1' as ModelVersion,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -70,7 +81,7 @@ const fakeFloor: Floor = {
 const fakePoi: Poi = {
   id: POI_ID,
   pisoId: FLOOR_ID,
-  tipo: 'salon' as PoiType,
+  tipo: 'salon',
   nombre: 'Salón 101',
   geometria: { type: 'Point', coordinates: [0.5, 0.5] },
   metadatos: { capacidad: 40 },
@@ -81,7 +92,7 @@ const fakePoi: Poi = {
 const fakeUser: User = {
   id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' as unknown as User['id'],
   email: 'estudiante@utb.edu.co',
-  role: 'estudiante' as UserRole,
+  role: 'estudiante',
   nombre: 'Estudiante de prueba',
   activo: true,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -95,65 +106,69 @@ const fakeTokens: AuthTokens = {
 };
 
 class FakeBuildingRepository implements BuildingRepository {
-  async findById(id: BuildingId) {
-    return id === BUILDING_ID ? fakeBuilding : null;
+  findById(id: BuildingId) {
+    return Promise.resolve(id === BUILDING_ID ? fakeBuilding : null);
   }
-  async findAll() {
-    return [fakeBuilding];
+  findAll() {
+    return Promise.resolve([fakeBuilding]);
   }
-  async findByCodigo() {
-    return fakeBuilding;
+  findByCodigo() {
+    return Promise.resolve(fakeBuilding);
   }
 }
 
 class FakeFloorRepository implements FloorRepository {
-  async findById(id: FloorId) {
-    return id === FLOOR_ID ? fakeFloor : null;
+  findById(id: FloorId) {
+    return Promise.resolve(id === FLOOR_ID ? fakeFloor : null);
   }
-  async findByBuildingId() {
-    return [fakeFloor];
+  findByBuildingId() {
+    return Promise.resolve([fakeFloor]);
   }
 }
 
 class FakeModel3DStorage implements Model3DStorage {
-  async getSignedUrl() {
-    return 'https://storage.example/signed-model.glb';
+  getSignedUrl() {
+    return Promise.resolve('https://storage.example/signed-model.glb');
   }
-  async uploadModel() {
-    return 'https://storage.example/uploaded-model.glb';
+  uploadModel() {
+    return Promise.resolve('https://storage.example/uploaded-model.glb');
   }
 }
 
 class FakePoiRepository implements PoiRepository {
-  async findById(id: PoiId) {
-    return id === POI_ID ? fakePoi : null;
+  findById(id: PoiId) {
+    return Promise.resolve(id === POI_ID ? fakePoi : null);
   }
-  async findByFloorId() {
-    return [fakePoi];
+  findByFloorId() {
+    return Promise.resolve([fakePoi]);
   }
-  async findByTipo() {
-    return [fakePoi];
+  findByTipo() {
+    return Promise.resolve([fakePoi]);
   }
-  async save(poi: Poi) {
-    return poi;
+  save(poi: Poi) {
+    return Promise.resolve(poi);
   }
 }
 
 class FakeSupabaseAuthClient implements SupabaseAuthClient {
-  async signInWithEmail() {
-    return fakeTokens;
+  signInWithEmail() {
+    return Promise.resolve(fakeTokens);
   }
-  async signUpWithEmail() {
-    return fakeTokens;
+  signUpWithEmail() {
+    return Promise.resolve(fakeTokens);
   }
-  async refreshAccessToken() {
-    return fakeTokens;
+  refreshAccessToken() {
+    return Promise.resolve(fakeTokens);
   }
-  async signOut() {}
-  async getUser() {
-    return fakeUser;
+  signOut() {
+    return Promise.resolve();
   }
-  async updateUserRole() {}
+  getUser() {
+    return Promise.resolve(fakeUser);
+  }
+  updateUserRole() {
+    return Promise.resolve();
+  }
 }
 
 interface OpenApiOperation {
@@ -165,7 +180,10 @@ interface OpenApiOperation {
 function loadContractOperations(): OpenApiOperation[] {
   const contractPath = resolve(__dirname, '../../../docs/api/openapi.v1.yaml');
   const doc = parse(readFileSync(contractPath, 'utf-8')) as {
-    paths: Record<string, Record<string, { responses: Record<string, unknown> }>>;
+    paths: Record<
+      string,
+      Record<string, { responses: Record<string, unknown> }>
+    >;
   };
 
   const operations: OpenApiOperation[] = [];
@@ -188,6 +206,45 @@ function resolveSamplePath(path: string): string {
     .replace('{floorId}', FLOOR_ID)
     .replace('{poiId}', POI_ID)
     .replace('{userId}', fakeUser.id as unknown as string);
+}
+
+/**
+ * Cuerpo de petición válido por ruta, para las operaciones que lo requieren.
+ * Los fakes de auth/ubicación ignoran su input y devuelven datos fijos, pero
+ * CreatePoiUseCase sí construye la entidad a partir del body real — sin esto,
+ * un body vacío produce un Poi incompleto que no cumple el schema.
+ */
+function sampleRequestBody(path: string): Record<string, unknown> {
+  const bodies: Record<string, Record<string, unknown>> = {
+    '/api/v1/auth/signin': {
+      email: 'estudiante@utb.edu.co',
+      password: 'clave-segura',
+    },
+    '/api/v1/auth/signup': {
+      email: 'nuevo@utb.edu.co',
+      password: 'clave-segura',
+      nombre: 'Nuevo Estudiante',
+    },
+    '/api/v1/auth/refresh': { refreshToken: 'fake-refresh-token' },
+    '/api/v1/auth/users/{userId}/role': {
+      userId: fakeUser.id,
+      role: 'docente',
+    },
+    '/api/v1/pois': {
+      pisoId: FLOOR_ID,
+      tipo: 'salon',
+      nombre: 'Salón 102',
+      geometria: { type: 'Point', coordinates: [0.6, 0.6] },
+      metadatos: { capacidad: 30 },
+    },
+    '/api/v1/location/manual': {
+      buildingId: BUILDING_ID,
+      floor: 1,
+      x: 10,
+      y: 20,
+    },
+  };
+  return bodies[path] ?? {};
 }
 
 describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () => {
@@ -214,7 +271,7 @@ describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () =>
     app = moduleFixture.createNestApplication();
     // Mismo bootstrap que src/main.ts — si diverge de aquí, esta prueba
     // deja de reflejar lo que se despliega realmente (ver comentario arriba).
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api', { exclude: ['health'] });
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -228,12 +285,14 @@ describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () =>
     ajv = new Ajv2020({ strict: false, allErrors: true });
     addFormats(ajv);
 
-    const contractPath = resolve(__dirname, '../../../docs/api/openapi.v1.yaml');
-    contractDoc = parse(readFileSync(contractPath, 'utf-8'));
-    // Registra el documento completo bajo la clave 'contract' para poder
-    // compilar validadores de sub-schemas por JSON pointer (p.ej.
-    // 'contract#/components/schemas/Building') sin duplicar $refs a mano.
-    ajv.addSchema(contractDoc, 'contract');
+    const contractPath = resolve(
+      __dirname,
+      '../../../docs/api/openapi.v1.yaml',
+    );
+    contractDoc = parse(readFileSync(contractPath, 'utf-8')) as Record<
+      string,
+      unknown
+    >;
   });
 
   afterAll(async () => {
@@ -246,11 +305,11 @@ describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () =>
     '$method $path existe en el servidor (no 404)',
     async ({ method, path, expectedStatuses }) => {
       const samplePath = resolveSamplePath(path);
-      const req = request(app.getHttpServer() as App)[method.toLowerCase() as 'get' | 'post']!(
-        samplePath,
-      );
+      const req = request(app.getHttpServer())[
+        method.toLowerCase() as 'get' | 'post'
+      ](samplePath);
 
-      const response = await req.send({});
+      const response = await req.send(sampleRequestBody(path));
 
       expect(response.status).not.toBe(404);
 
@@ -259,19 +318,41 @@ describe('Contrato OpenAPI v1 (docs/api/openapi.v1.yaml) vs runtime real', () =>
           (contractDoc.paths as Record<string, Record<string, unknown>>)[path][
             method.toLowerCase()
           ] as {
-            responses: Record<string, { content?: { 'application/json'?: { schema: { $ref?: string } } } }>;
+            responses: Record<
+              string,
+              {
+                content?: {
+                  'application/json'?: { schema: { $ref?: string } };
+                };
+              }
+            >;
           }
-        ).responses[String(response.status)]?.content?.['application/json']?.schema;
+        ).responses[String(response.status)]?.content?.['application/json']
+          ?.schema;
 
         if (operationSchema?.$ref) {
-          // operationSchema.$ref es del tipo '#/components/schemas/X';
-          // se resuelve contra el documento raíz registrado como 'contract'.
-          const pointer = operationSchema.$ref.replace(/^#/, '');
-          const validate = ajv.getSchema(`contract${pointer}`) ?? ajv.compile({ $ref: `contract${pointer}` });
+          // Compila un schema autocontenido: incluye components.schemas del
+          // contrato como hermano de $ref, para que '#/components/schemas/X'
+          // resuelva contra ESTE documento (sin registrar/cachear estado
+          // compartido entre pruebas, que resultó frágil con addSchema).
+          const validate = ajv.compile({
+            components: contractDoc.components,
+            $ref: operationSchema.$ref,
+          });
           const valid = validate(response.body);
-          expect(valid, JSON.stringify(validate.errors)).toBe(true);
+          if (!valid) {
+            throw new Error(
+              `Respuesta no cumple el schema del contrato para ${method} ${path}: ${JSON.stringify(
+                validate.errors,
+              )}`,
+            );
+          }
         }
       }
     },
+    // GET /health golpea Supabase real (no tiene puerto fakeable, ver
+    // health.controller.ts); con credenciales dummy la conexión falla más
+    // lento que el timeout por defecto de Jest.
+    15000,
   );
 });

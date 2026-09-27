@@ -122,8 +122,8 @@ C4Container
 
     Rel(estudiante, mobileApp, "Usa", "UI Táctil, EC-02 ≥30fps")
     Rel(docente, mobileApp, "Usa autenticado", "HTTPS Bearer JWT")
-    Rel(mobileApp, backendApi, "Consulta edificios/pisos/POIs + health", "HTTPS/JSON REST GET /api/mapas/*")
-    Rel(mobileApp, backendApi, "Auth login/refresh", "HTTPS POST /api/auth/*")
+    Rel(mobileApp, backendApi, "Consulta edificios/pisos/POIs + health", "HTTPS/JSON REST GET /api/v1/map/* /health")
+    Rel(mobileApp, backendApi, "Auth login/refresh", "HTTPS POST /api/v1/auth/*")
     Rel(mobileApp, supabaseStorage, "Descarga .glb vía URL firmada del Backend", "HTTPS S3 signed URL")
     Rel(mobileApp, supabaseRealtime, "Suscribe canal POIs", "WSS")
     Rel(mobileApp, osLocation, "Permisos + watchLocation", "MethodChannels geolocator")

@@ -1,7 +1,14 @@
 import { Module } from '@nestjs/common';
 import { UbicacionController } from './interfaces/ubicacion.controller';
-import { GetCurrentLocationUseCase, SetManualLocationUseCase, RequestLocationPermissionUseCase } from './application/use-cases';
-import { PlatformLocationAdapter, FakeLocationProvider } from './infrastructure/platform/location-adapter';
+import {
+  GetCurrentLocationUseCase,
+  SetManualLocationUseCase,
+  RequestLocationPermissionUseCase,
+} from './application/use-cases';
+import {
+  PlatformLocationAdapter,
+  FakeLocationProvider,
+} from './infrastructure/platform/location-adapter';
 
 @Module({
   controllers: [UbicacionController],
@@ -11,7 +18,10 @@ import { PlatformLocationAdapter, FakeLocationProvider } from './infrastructure/
     RequestLocationPermissionUseCase,
     {
       provide: 'LocationProvider',
-      useClass: process.env.NODE_ENV === 'test' ? FakeLocationProvider : PlatformLocationAdapter,
+      useClass:
+        process.env.NODE_ENV === 'test'
+          ? FakeLocationProvider
+          : PlatformLocationAdapter,
     },
   ],
   exports: [

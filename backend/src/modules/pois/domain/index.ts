@@ -1,9 +1,17 @@
-import { Entity, ValueObject } from '../../../shared/kernel';
+import { Entity } from '../../../shared/kernel';
 
 export type PoiId = string & { readonly __brand: unique symbol };
 export type FloorId = string & { readonly __brand: unique symbol };
 
-export type PoiType = 'salon' | 'laboratorio' | 'bano' | 'cafeteria' | 'biblioteca' | 'escalera' | 'ascensor' | 'otro';
+export type PoiType =
+  | 'salon'
+  | 'laboratorio'
+  | 'bano'
+  | 'cafeteria'
+  | 'biblioteca'
+  | 'escalera'
+  | 'ascensor'
+  | 'otro';
 
 export interface Poi extends Entity<PoiId> {
   pisoId: FloorId;

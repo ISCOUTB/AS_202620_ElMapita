@@ -1,7 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../../../shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
-import { Poi, PoiId, FloorId, PoiType, PoiRepository, GeoPoint, PoiMetadatos } from '../domain';
+import {
+  Poi,
+  PoiId,
+  FloorId,
+  PoiType,
+  PoiRepository,
+  GeoPoint,
+  PoiMetadatos,
+} from '../domain';
+
+interface PoiRow {
+  id: string;
+  piso_id: string;
+  tipo: string;
+  nombre: string;
+  geometria: GeoPoint;
+  metadatos: PoiMetadatos;
+  created_at: string;
+  updated_at: string;
+}
 
 @Injectable()
 export class SupabasePoiRepository implements PoiRepository {
@@ -12,35 +32,41 @@ export class SupabasePoiRepository implements PoiRepository {
   }
 
   async findById(id: PoiId): Promise<Poi | null> {
-    const { data, error } = await this.client
+    const { data, error } = (await this.client
       .from('pois')
       .select('*')
       .eq('id', id)
-      .single();
+      .single()) as { data: PoiRow | null; error: PostgrestError | null };
     if (error || !data) return null;
     return this.mapToPoi(data);
   }
 
   async findByFloorId(pisoId: FloorId): Promise<Poi[]> {
-    const { data, error } = await this.client
+    const { data, error } = (await this.client
       .from('pois')
       .select('*')
-      .eq('piso_id', pisoId);
+      .eq('piso_id', pisoId)) as {
+      data: PoiRow[] | null;
+      error: PostgrestError | null;
+    };
     if (error || !data) return [];
     return data.map(this.mapToPoi);
   }
 
   async findByTipo(tipo: PoiType): Promise<Poi[]> {
-    const { data, error } = await this.client
+    const { data, error } = (await this.client
       .from('pois')
       .select('*')
-      .eq('tipo', tipo);
+      .eq('tipo', tipo)) as {
+      data: PoiRow[] | null;
+      error: PostgrestError | null;
+    };
     if (error || !data) return [];
     return data.map(this.mapToPoi);
   }
 
   async save(poi: Poi): Promise<Poi> {
-    const { data, error } = await this.client
+    const { data, error } = (await this.client
       .from('pois')
       .upsert({
         id: poi.id,
@@ -52,21 +78,20 @@ export class SupabasePoiRepository implements PoiRepository {
         updated_at: new Date().toISOString(),
       })
       .select()
-      .single();
-    if (error || !data) throw new Error(`Failed to save POI: ${error?.message}`);
+      .single()) as { data: PoiRow | null; error: PostgrestError | null };
+    if (error || !data)
+      throw new Error(`Failed to save POI: ${error?.message}`);
     return this.mapToPoi(data);
   }
 
-  private mapToPoi(row: any): Poi {
-    return {
-      id: row.id as PoiId,
-      pisoId: row.piso_id as FloorId,
-      tipo: row.tipo as PoiType,
-      nombre: row.nombre,
-      geometria: row.geometria as GeoPoint,
-      metadatos: row.metadatos as PoiMetadatos,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-    };
-  }
+  private mapToPoi = (row: PoiRow): Poi => ({
+    id: row.id as PoiId,
+    pisoId: row.piso_id as FloorId,
+    tipo: row.tipo as PoiType,
+    nombre: row.nombre,
+    geometria: row.geometria,
+    metadatos: row.metadatos,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  });
 }

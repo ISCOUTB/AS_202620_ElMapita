@@ -13,9 +13,12 @@ export class SupabaseModel3DStorage implements Model3DStorage {
     return getSupabaseClient(this.configService);
   }
 
-  async getSignedUrl(buildingId: BuildingId, version: ModelVersion): Promise<string> {
+  async getSignedUrl(
+    buildingId: BuildingId,
+    version: ModelVersion,
+  ): Promise<string> {
     const path = `${buildingId}/${version}.glb`;
-    
+
     const { data, error } = await this.client.storage
       .from(this.BUCKET)
       .createSignedUrl(path, 3600); // 1 hora
@@ -27,9 +30,13 @@ export class SupabaseModel3DStorage implements Model3DStorage {
     return data.signedUrl;
   }
 
-  async uploadModel(buildingId: BuildingId, file: Buffer, version: ModelVersion): Promise<string> {
+  async uploadModel(
+    buildingId: BuildingId,
+    file: Buffer,
+    version: ModelVersion,
+  ): Promise<string> {
     const path = `${buildingId}/${version}.glb`;
-    
+
     const { data, error } = await this.client.storage
       .from(this.BUCKET)
       .upload(path, file, {

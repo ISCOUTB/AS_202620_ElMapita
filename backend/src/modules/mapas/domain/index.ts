@@ -44,5 +44,9 @@ export interface FloorRepository {
 
 export interface Model3DStorage {
   getSignedUrl(buildingId: BuildingId, version: ModelVersion): Promise<string>;
-  uploadModel(buildingId: BuildingId, file: Buffer, version: ModelVersion): Promise<string>;
+  uploadModel(
+    buildingId: BuildingId,
+    file: Buffer,
+    version: ModelVersion,
+  ): Promise<string>;
 }

@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../../../../shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
-import { SupabaseAuthClient, AuthTokens, User, UserId, UserRole } from '../../domain';
+import {
+  SupabaseAuthClient,
+  AuthTokens,
+  User,
+  UserId,
+  UserRole,
+} from '../../domain';
 
 @Injectable()
 export class SupabaseAuthClientImpl implements SupabaseAuthClient {
@@ -28,7 +35,11 @@ export class SupabaseAuthClientImpl implements SupabaseAuthClient {
     };
   }
 
-  async signUpWithEmail(email: string, password: string, metadata: { nombre: string }): Promise<AuthTokens> {
+  async signUpWithEmail(
+    email: string,
+    password: string,
+    metadata: { nombre: string },
+  ): Promise<AuthTokens> {
     const { data, error } = await this.client.auth.signUp({
       email,
       password,
@@ -88,12 +99,16 @@ export class SupabaseAuthClientImpl implements SupabaseAuthClient {
     }
   }
 
-  private mapToUser(supabaseUser: any): User {
+  private mapToUser(supabaseUser: SupabaseUser): User {
+    const metadata = supabaseUser.user_metadata as {
+      role?: UserRole;
+      nombre?: string;
+    };
     return {
       id: supabaseUser.id as UserId,
       email: supabaseUser.email!,
-      role: (supabaseUser.user_metadata?.role as UserRole) || 'estudiante',
-      nombre: supabaseUser.user_metadata?.nombre || supabaseUser.email!,
+      role: metadata?.role || 'estudiante',
+      nombre: metadata?.nombre || supabaseUser.email!,
       activo: true,
       createdAt: new Date(supabaseUser.created_at),
       updatedAt: new Date(supabaseUser.updated_at || supabaseUser.created_at),

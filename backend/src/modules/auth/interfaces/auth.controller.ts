@@ -1,10 +1,28 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { SignInUseCase, SignUpUseCase, RefreshTokenUseCase, SignOutUseCase, GetCurrentUserUseCase, UpdateUserRoleUseCase } from '../application/use-cases';
-import type { SignInInput, SignUpInput, RefreshTokenInput, UpdateUserRoleInput } from '../domain';
+import { Controller, Post, Body, Get, Request } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import {
+  SignInUseCase,
+  SignUpUseCase,
+  RefreshTokenUseCase,
+  SignOutUseCase,
+  GetCurrentUserUseCase,
+  UpdateUserRoleUseCase,
+} from '../application/use-cases';
+import type {
+  SignInInput,
+  SignUpInput,
+  RefreshTokenInput,
+  UpdateUserRoleInput,
+} from '../domain';
 
 @ApiTags('Autenticación')
-@Controller('api/v1/auth')
+@Controller('v1/auth')
 export class AuthController {
   constructor(
     private readonly signInUseCase: SignInUseCase,
@@ -26,7 +44,10 @@ export class AuthController {
   @Post('signup')
   @ApiOperation({ summary: 'Registrar nuevo usuario' })
   @ApiResponse({ status: 201, description: 'Usuario registrado con tokens' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos o email ya existe' })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos inválidos o email ya existe',
+  })
   async signUp(@Body() input: SignUpInput) {
     return this.signUpUseCase.execute(input);
   }
@@ -34,7 +55,10 @@ export class AuthController {
   @Post('refresh')
   @ApiOperation({ summary: 'Refrescar access token' })
   @ApiResponse({ status: 200, description: 'Nuevos tokens' })
-  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token inválido o expirado',
+  })
   async refresh(@Body() input: RefreshTokenInput) {
     return this.refreshTokenUseCase.execute(input);
   }
@@ -51,7 +75,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtener usuario actual' })
   @ApiResponse({ status: 200, description: 'Datos del usuario autenticado' })
   @ApiResponse({ status: 401, description: 'Token inválido o expirado' })
-  async getCurrentUser(@Request() req: any) {
+  async getCurrentUser(@Request() req: ExpressRequest) {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       throw new Error('Missing or invalid authorization header');

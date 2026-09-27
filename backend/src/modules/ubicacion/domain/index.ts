@@ -1,5 +1,3 @@
-import { ValueObject } from '../../../shared/kernel';
-
 export type Coordinates = {
   latitude: number;
   longitude: number;

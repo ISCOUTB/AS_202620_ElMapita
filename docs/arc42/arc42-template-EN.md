@@ -359,7 +359,7 @@ Usuario            Flutter UI         MapasBloc        ModelCache       Backend 
    |                   |   (LoadBuilding) |                |                 |                  |
    |                   |                  |-- 3. GetMeta ->|                 |                  |
    |                   |                  |--------------------------------->|                  |
-   |                   |                  |   GET /api/mapas/edificios/L     |                  |
+   |                   |                  |   GET /api/v1/map/buildings/L    |                  |
    |                   |                  |<---------------------------------|                  |
    |                   |                  |   Retorna {version, modelUrl}    |                  |
    |                   |                  |                |                 |                  |
@@ -383,7 +383,7 @@ Usuario            Flutter UI         MapasBloc        ModelCache       Backend 
 
 1. El usuario selecciona un edificio desde el catálogo de la app.
 2. `MapPage` emite `LoadBuildingEvent` a `MapasBloc`.
-3. `LoadBuildingUseCase` invoca a la API Backend (`GET /mapas/edificios/:id`) para obtener metadatos actualizados y la URL del modelo 3D.
+3. `LoadBuildingUseCase` invoca a la API Backend (`GET /api/v1/map/buildings/:id`, ver [`docs/api/openapi.v1.yaml`](../api/openapi.v1.yaml)) para obtener metadatos actualizados y la URL del modelo 3D.
 4. Se consulta `ModelCache` con la versión recibida; si el modelo ya reside localmente, se omite la descarga de red.
 5. Si no está en caché, se descarga el archivo binario comprimido `.glb` directamente de Supabase Storage.
 6. El archivo se persiste en el almacenamiento local del dispositivo indexado por su versión.
@@ -535,7 +535,7 @@ Las decisiones técnicas más relevantes tomadas por el equipo se encuentran for
 | **DEC-04** | Estrategia de **Caché Local Versionada en Dos Niveles** (Hive + Filesystem) | Aceptada | Cumplimiento del escenario EC-04. Permite apertura de mapas y consulta de POIs en < 5 s sin conexión, utilizando versionamiento semántico para invalidación. | [ADR-0001](../adr/0001-estilo-arquitectonico-propuesto.md) |
 | **DEC-05** | Tratamiento de Incertidumbre y **Fallback Manual de Ubicación** | Aceptada | Rechazo de estimaciones GPS con precisión > 15 m; activación de selección manual en ≤ 2 s tras timeout de 10 s para evitar orientar erróneamente al usuario en interiores. | [ADR-0001](../adr/0001-estilo-arquitectonico-propuesto.md) |
 | **DEC-06** | Contratos de API tipados mediante **OpenAPI / Swagger** | Aceptada | Backend actúa como única fuente de verdad documental; generación de clientes Dart tipados que previenen inconsistencias en tiempo de compilación. | [ADR-0001](../adr/0001-estilo-arquitectonico-propuesto.md) · [ADR-0003](../adr/0003-contrato-openapi-versionado.md) |
-| **DEC-07** | Contrato **OpenAPI 3.1 versionado** (`docs/api/openapi.v1.yaml`) con **prueba de contrato en el pipeline** (lint, deriva contrato↔código, runtime contrato↔respuestas reales) | Aceptada | Materializa DEC-06 como archivo revisable en PR; detectó en la práctica la deriva de prefijo de ruta registrada en RSK-04. AsyncAPI descartado por ahora: la integración es 100% REST síncrona y Supabase Realtime sigue siendo deuda (ADR-0002). | [ADR-0003](../adr/0003-contrato-openapi-versionado.md) |
+| **DEC-07** | Contrato **OpenAPI 3.1 versionado** (`docs/api/openapi.v1.yaml`) con **prueba de contrato en el pipeline** (lint, deriva contrato↔código, runtime contrato↔respuestas reales, incluida validación del cuerpo contra el schema) | Aceptada | Materializa DEC-06 como archivo revisable en PR; detectó y permitió cerrar la deriva de prefijo de ruta (RSK-04) y un bug de inyección de dependencias que quedaba oculto por ella. AsyncAPI descartado por ahora: la integración es 100% REST síncrona y Supabase Realtime sigue siendo deuda (ADR-0002). | [ADR-0003](../adr/0003-contrato-openapi-versionado.md) |
 
 ---
 
@@ -655,7 +655,7 @@ Utilidad de El Mapita UTB
 | **RSK-01** | Complejidad de modelos 3D provistos por la universidad excede límites de memoria móvil. | Alto | Pipeline automatizado de optimización y simplificación de mallas (Blender/gltf-transform) antes de publicar en Supabase Storage. |
 | **RSK-02** | Disparidad de hardware y rendimiento de GPU entre dispositivos Android de gama de entrada. | Alto | Configuración de niveles de detalle (LOD) y fallback a vista esquemática si la tasa de cuadros cae por debajo de 20 FPS. |
 | **RSK-03** | Dependencia del servicio gestionado Supabase (límites de cuota o indisponibilidad externa). | Medio | Caché local robusta en clientes móviles y abstracción de repositorios para permitir migración transparente. |
-| **RSK-04** | Deriva de contrato: el backend expone sus rutas con prefijo duplicado (`/api/api/v1/...` en vez de `/api/v1/...`; `/api/health` en vez de `/health`) frente a lo que el frontend consume y lo que documenta el README/C4. Detectado por la prueba de contrato (ADR-0003) al implementarla, no antes. | Alto (bloquea toda la integración FE-BE en un entorno real) | `docs/api/openapi.v1.yaml` fija la ruta correcta; `npm run openapi:drift` y `npm run test:contracts` señalan la deriva en cada corrida de CI (`continue-on-error` hasta corregir). Corrección de código pendiente — ver `correcciones.md`. |
+| **RSK-04** | ~~Deriva de contrato: el backend exponía sus rutas con prefijo duplicado (`/api/api/v1/...` en vez de `/api/v1/...`; `/api/health` en vez de `/health`).~~ **Cerrado.** Detectado por la prueba de contrato (ADR-0003) al implementarla; corregido en el mismo ADR quitando el prefijo redundante de los 4 controladores y excluyendo `health` del prefijo global. `npm run openapi:drift` reporta 0 rutas en deriva; los pasos de CI ya no necesitan `continue-on-error`. Al corregirlo se descubrió y cerró un segundo bug (inyección de dependencias rota en 14 casos de uso) que RSK-04 mantenía invisible. | Alto (bloqueaba toda la integración FE-BE en un entorno real) | `docs/api/openapi.v1.yaml` fija la ruta correcta; `npm run openapi:drift` y `npm run test:contracts` verifican en cada corrida de CI. Ver `docs/adr/0003-contrato-openapi-versionado.md` sección "Cierre de RSK-04" y `correcciones.md`. |
 
 ---
 

@@ -1,5 +1,6 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../shared/kernel';
-import { User, UserRole, AuthTokens, SupabaseAuthClient } from '../domain';
+import type { User, UserRole, AuthTokens, SupabaseAuthClient } from '../domain';
 
 export interface SignInInput {
   email: string;
@@ -11,17 +12,24 @@ export interface SignInOutput {
   tokens: AuthTokens;
 }
 
+@Injectable()
 export class SignInUseCase implements UseCase<SignInInput, SignInOutput> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(input: SignInInput): Promise<SignInOutput> {
-    const tokens = await this.authClient.signInWithEmail(input.email, input.password);
+    const tokens = await this.authClient.signInWithEmail(
+      input.email,
+      input.password,
+    );
     const user = await this.authClient.getUser(tokens.accessToken);
-    
+
     if (!user) {
       throw new Error('User not found after sign in');
     }
-    
+
     return { user, tokens };
   }
 }
@@ -37,17 +45,25 @@ export interface SignUpOutput {
   tokens: AuthTokens;
 }
 
+@Injectable()
 export class SignUpUseCase implements UseCase<SignUpInput, SignUpOutput> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(input: SignUpInput): Promise<SignUpOutput> {
-    const tokens = await this.authClient.signUpWithEmail(input.email, input.password, { nombre: input.nombre });
+    const tokens = await this.authClient.signUpWithEmail(
+      input.email,
+      input.password,
+      { nombre: input.nombre },
+    );
     const user = await this.authClient.getUser(tokens.accessToken);
-    
+
     if (!user) {
       throw new Error('User not found after sign up');
     }
-    
+
     return { user, tokens };
   }
 }
@@ -60,8 +76,15 @@ export interface RefreshTokenOutput {
   tokens: AuthTokens;
 }
 
-export class RefreshTokenUseCase implements UseCase<RefreshTokenInput, RefreshTokenOutput> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+@Injectable()
+export class RefreshTokenUseCase implements UseCase<
+  RefreshTokenInput,
+  RefreshTokenOutput
+> {
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(input: RefreshTokenInput): Promise<RefreshTokenOutput> {
     const tokens = await this.authClient.refreshAccessToken(input.refreshToken);
@@ -73,8 +96,12 @@ export interface SignOutInput {
   accessToken: string;
 }
 
+@Injectable()
 export class SignOutUseCase implements UseCase<SignOutInput, void> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(): Promise<void> {
     await this.authClient.signOut();
@@ -89,16 +116,23 @@ export interface GetCurrentUserOutput {
   user: User;
 }
 
-export class GetCurrentUserUseCase implements UseCase<GetCurrentUserInput, GetCurrentUserOutput> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+@Injectable()
+export class GetCurrentUserUseCase implements UseCase<
+  GetCurrentUserInput,
+  GetCurrentUserOutput
+> {
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(input: GetCurrentUserInput): Promise<GetCurrentUserOutput> {
     const user = await this.authClient.getUser(input.accessToken);
-    
+
     if (!user) {
       throw new Error('Invalid or expired token');
     }
-    
+
     return { user };
   }
 }
@@ -108,8 +142,15 @@ export interface UpdateUserRoleInput {
   role: UserRole;
 }
 
-export class UpdateUserRoleUseCase implements UseCase<UpdateUserRoleInput, void> {
-  constructor(private readonly authClient: SupabaseAuthClient) {}
+@Injectable()
+export class UpdateUserRoleUseCase implements UseCase<
+  UpdateUserRoleInput,
+  void
+> {
+  constructor(
+    @Inject('SupabaseAuthClient')
+    private readonly authClient: SupabaseAuthClient,
+  ) {}
 
   async execute(input: UpdateUserRoleInput): Promise<void> {
     await this.authClient.updateUserRole(input.userId, input.role);

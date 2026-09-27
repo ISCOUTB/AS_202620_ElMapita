@@ -1,10 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { GetCurrentLocationUseCase, SetManualLocationUseCase, RequestLocationPermissionUseCase } from '../application/use-cases';
+import {
+  GetCurrentLocationUseCase,
+  SetManualLocationUseCase,
+  RequestLocationPermissionUseCase,
+} from '../application/use-cases';
 import type { SetManualLocationInput } from '../domain';
 
 @ApiTags('Ubicación')
-@Controller('api/v1/location')
+@Controller('v1/location')
 export class UbicacionController {
   constructor(
     private readonly getCurrentLocationUseCase: GetCurrentLocationUseCase,
@@ -28,7 +32,10 @@ export class UbicacionController {
 
   @Post('permission/request')
   @ApiOperation({ summary: 'Solicitar permiso de ubicación' })
-  @ApiResponse({ status: 200, description: 'Resultado de la solicitud de permiso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado de la solicitud de permiso',
+  })
   async requestPermission() {
     return this.requestLocationPermissionUseCase.execute();
   }

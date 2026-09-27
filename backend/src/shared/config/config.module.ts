@@ -8,7 +8,9 @@ import * as Joi from 'joi';
     NestConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
+        NODE_ENV: Joi.string()
+          .valid('development', 'production', 'test')
+          .default('development'),
         PORT: Joi.number().port().default(3000),
         SUPABASE_URL: Joi.string().uri().required(),
         SUPABASE_SERVICE_ROLE_KEY: Joi.string().required(),

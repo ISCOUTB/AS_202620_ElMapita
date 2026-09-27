@@ -29,7 +29,7 @@ export abstract class BaseEntity<T> implements Entity<T> {
   constructor(
     public readonly id: T,
     public readonly createdAt: Date = new Date(),
-    public readonly updatedAt: Date = new Date()
+    public readonly updatedAt: Date = new Date(),
   ) {}
 
   protected abstract validate(): void;

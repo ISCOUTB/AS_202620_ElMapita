@@ -72,9 +72,9 @@ Se agregó la entrada `## 2026-09-07 — Sesión de trabajo con Claude Code` en 
 2. **Job backend — falla determinista en `npm run lint`.** `backend/eslint.config.mjs` activa `tseslint.configs.recommendedTypeChecked`, que convierte en **error** (no warning) reglas como `no-unsafe-assignment` y `no-unsafe-member-access`. Hay ~10 usos de `any` sin tipar en los adaptadores que mapean filas crudas de Supabase (`supabase-repositories.ts`, `supabase-poi-repository.ts`, `supabase-auth-client.ts`) y en tres controllers.
 3. El job `quality-gate` depende de ambos (`needs: [backend, frontend, docs]`) y falla en cascada.
 
-**Por qué no se corrige ahora:** corregirlo implica tocar `ci.yml` y/o código fuente (tipar las filas de Supabase, o relajar reglas de lint) — exactamente lo que el equipo decidió no hacer en esta tanda, reservada a documentación.
+**Por qué no se corrigió el 2026-09-07:** corregirlo implicaba tocar `ci.yml` y/o código fuente (tipar las filas de Supabase, o relajar reglas de lint) — exactamente lo que el equipo decidió no hacer en esa tanda, reservada a documentación.
 
-**Qué lo desbloquea:** alinear `FLUTTER_VERSION` en `ci.yml` con el SDK real del proyecto, y tipar las filas de Supabase en los seis archivos identificados.
+**RESUELTO el 2026-09-21** (como parte del cierre de RSK-04, sección 5): `FLUTTER_VERSION` alineado a `3.44.0` en `ci.yml`; las filas de Supabase se tiparon (sin `any`) en `supabase-repositories.ts`, `supabase-poi-repository.ts`, `supabase-auth-client.ts` y en los controllers de `mapas`/`pois`/`auth`. `npm run lint` (backend) y `flutter analyze`/`flutter pub get` (frontend) verificados en verde localmente.
 
 ### Criterio 9 — Resultado contrastado con umbral
 
@@ -94,14 +94,14 @@ Sin acción del equipo — lo resuelve el docente en la sesión de sustentación
 
 | Criterio | Qué se entrega | Depende de |
 |---|---|---|
-| 8 | `FLUTTER_VERSION` alineado a 3.44.0 en `ci.yml`; filas de Supabase tipadas (sin `any`) en los 6 archivos identificados | Ninguno — es el primer paso, habilita medir todo lo demás en CI |
+| ~~8~~ | ~~`FLUTTER_VERSION` alineado a 3.44.0 en `ci.yml`; filas de Supabase tipadas (sin `any`) en los 6 archivos identificados~~ — **Resuelto 2026-09-21**, ver sección 5 | — |
 | 6 | Implementación end-to-end de RES-04 (LOD + degradación progresiva) sobre el esqueleto ya estable | Adaptador `MapRenderer` |
 | 4, 9 | Primera línea base medida de EC-01/EC-02 (carga y fluidez) sobre dispositivo real, contrastada contra los umbrales ya definidos | Renderizado 3D real implementado |
 | 10 | Columnas `Pruebas` y `Evidencia` de `docs/aspectos.md` completas para las 4 filas | Resultado de 4, 6 y 9 |
 
 ---
 
-## 5. Deuda declarada — Contrato de API (2026-09-20)
+## 5. Deuda declarada — Contrato de API (2026-09-20) — RESUELTA el 2026-09-21
 
 No es respuesta a un criterio de la matriz de evaluación del corte 1; se documenta aquí por ser exactamente el tipo de deuda que este archivo existe para rastrear, encontrada al implementar el entregable "contrato OpenAPI versionado + prueba de contrato en pipeline + ADR" ([ADR-0003](docs/adr/0003-contrato-openapi-versionado.md)).
 
@@ -116,6 +116,16 @@ Causa: `backend/src/main.ts` aplica `setGlobalPrefix('api')` global, y los 4 con
 
 **Por qué no se corrige en esta entrega:** el alcance de esta entrega es el contrato, su versionado y su verificación en el pipeline — no una corrección de rutas de producción, que merece su propia revisión (afecta a los 4 controladores y potencialmente a URLs ya integradas). Se prioriza dejar el mecanismo de detección funcionando (el objetivo del entregable) sobre corregir silenciosamente el síntoma.
 
-**Registrado como:** RSK-04 ([arc42 §11](docs/arc42/arc42-template-EN.md#section-technical-risks)). La prueba de contrato (`npm run openapi:drift` y `npm run test:contracts`, job `contract` en `ci.yml`) señala esta deriva en cada corrida, con `continue-on-error: true`.
+**Registrado como:** RSK-04 ([arc42 §11](docs/arc42/arc42-template-EN.md#section-technical-risks)).
+
+### Resolución (2026-09-21)
+
+Se corrigió el prefijo duplicado: se quitó `api/` de los 4 controladores de módulo (quedan `@Controller('v1/map')`, `@Controller('v1/pois')`, `@Controller('v1/auth')`, `@Controller('v1/location')`) y se excluyó `health` del prefijo global (`app.setGlobalPrefix('api', { exclude: ['health'] })`), replicado en `main.ts`, `backend/scripts/generate-openapi.ts` y `backend/test/contract/openapi.contract-spec.ts` para que los tres sigan bootstrapeando la app igual. `npm run openapi:drift` pasa de 16 rutas en deriva a **0**. Los pasos `openapi:drift` y `test:contracts` en `ci.yml` (job `contract`) ya no llevan `continue-on-error`.
+
+**Hallazgo adicional durante la corrección:** al llegar las peticiones por primera vez a los controladores, se descubrió que 14 casos de uso (`src/modules/{mapas,pois,auth,ubicacion}/application/use-cases.ts`) recibían sus dependencias tipadas por interfaz TypeScript sin el decorador `@Inject('Token')`, por lo que Nest no podía resolverlas y el parámetro llegaba `undefined` — cada endpoint de negocio real (edificios, POIs, ubicación, login) respondía `500`. Este bug llevaba oculto desde el esqueleto inicial porque ninguna prueba anterior ejercía estas rutas de punta a punta, y RSK-04 impedía que las peticiones llegaran siquiera al controlador. Se corrigió agregando `@Inject('Token')` + `@Injectable()` en los 14 sitios. La prueba de contrato runtime (`backend/test/contract/openapi.contract-spec.ts`) ahora valida el **cuerpo** de cada respuesta 2xx contra el schema del contrato con Ajv, no solo que la ruta exista — así este patrón de bug vuelve a fallar en CI si se repite.
+
+Como parte de esta misma corrección se alinearon también dos deudas preexistentes del Criterio 8 (no relacionadas con el contrato, pero que bloqueaban ver el pipeline completo en verde): se tiparon las filas de Supabase sin `any` en los adaptadores de infraestructura (`backend/src/modules/{mapas,pois,auth}/infrastructure/**`) y se alineó `FLUTTER_VERSION` en `ci.yml` a `3.44.0` (el SDK real del proyecto, verificado con `flutter --version` local).
+
+Evidencia: `npm run build`, `npm run lint` (0 errores) y `npm run test:contracts` (16/16) en verde localmente tras el fix; ver [ADR-0003](docs/adr/0003-contrato-openapi-versionado.md) sección "Cierre de RSK-04" para el run de CI que capturó la deriva en rojo antes de corregirla.
 
 **Qué lo desbloquea:** quitar el prefijo `api/` de los 4 controladores de módulo (o ajustar `setGlobalPrefix`), y excluir o incluir `HealthController` de forma consistente con lo documentado. Al hacerlo, cambiar `continue-on-error: true` a `false` en los pasos `openapi:drift` y `test:contracts` de `ci.yml`, para que la prueba de contrato pase a ser bloqueante.

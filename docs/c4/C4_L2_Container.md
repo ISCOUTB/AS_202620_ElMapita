@@ -14,7 +14,7 @@ C4Container
 
     System_Boundary(c1, "El Mapita UTB") {
         Container(mobileApp, "App Móvil Flutter", "Dart, Flutter 3.19, BLoC, get_it, Dio, Hive, SecureStorage", "Renderiza .glb Draco, gestiona pisos/POIs, geoloc accuracy≤15m + fallback 10s→2s (EC-03), caché Hive+Filesystem <5s (EC-04).")
-        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node18+", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/*, RBAC JWT.")
+        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node18+", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/v1/*, RBAC JWT.")
         ContainerDb(localCacheMeta, "Caché Local Metadatos", "Hive (key-value Dart)", "Edificios/pisos/POIs + versiones semver. Offline <5s EC-04.")
         ContainerDb(localCacheModels, "Caché Local Modelos 3D", "Filesystem (path_provider)", "Binarios .glb por edificio/piso indexados por versionModelo3D. EC-01 <5s p95.")
     }
@@ -30,8 +30,8 @@ C4Container
 
     Rel(estudiante, mobileApp, "Usa", "UI Táctil, EC-02 ≥30fps")
     Rel(docente, mobileApp, "Usa autenticado", "HTTPS Bearer JWT")
-    Rel(mobileApp, backendApi, "Consulta edificios/pisos/POIs, health, versiones", "HTTPS/JSON REST GET /api/mapas/* /api/pois/*")
-    Rel(mobileApp, backendApi, "Login/registro/refresh", "HTTPS/JSON POST /api/auth/*")
+    Rel(mobileApp, backendApi, "Consulta edificios/pisos/POIs, health, versiones", "HTTPS/JSON REST GET /api/v1/map/* /api/v1/pois/* /health")
+    Rel(mobileApp, backendApi, "Login/registro/refresh", "HTTPS/JSON POST /api/v1/auth/*")
     Rel(mobileApp, supabaseStorage, "Descarga .glb vía URL firmada obtenida del Backend", "HTTPS S3 signed URL")
     Rel(mobileApp, supabaseAuth, "Auth directa opcional (SDK Flutter)", "HTTPS")
     Rel(mobileApp, supabaseRealtime, "Suscribe canal puntos_interes", "WSS Pub/Sub")
@@ -42,7 +42,7 @@ C4Container
     Rel(backendApi, supabaseDb, "CRUD edificios/pisos/POIs geoespaciales", "PG Wire / PostgREST RLS")
     Rel(backendApi, supabaseStorage, "Genera URLs firmadas, upload modelos (admin)", "HTTPS S3 API")
     Rel(backendApi, supabaseRealtime, "Publica eventos cambios", "WSS")
-    Rel(backendApi, mobileApp, "Responde DTOs tipados", "HTTPS/JSON OpenAPI 3.0")
+    Rel(backendApi, mobileApp, "Responde DTOs tipados", "HTTPS/JSON OpenAPI 3.1 (docs/api/openapi.v1.yaml)")
 ```
 
 ## Contenedores

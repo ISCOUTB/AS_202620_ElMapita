@@ -1,9 +1,14 @@
-import { Controller, Get, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { GetBuildingUseCase, GetBuildingInput, ListBuildingsUseCase, GetFloorModelUseCase, GetFloorModelInput } from '../application/use-cases';
+import {
+  GetBuildingUseCase,
+  ListBuildingsUseCase,
+  GetFloorModelUseCase,
+} from '../application/use-cases';
+import { BuildingId, FloorId } from '../domain';
 
 @ApiTags('Mapas')
-@Controller('api/v1/map')
+@Controller('v1/map')
 export class MapasController {
   constructor(
     private readonly getBuildingUseCase: GetBuildingUseCase,
@@ -19,12 +24,19 @@ export class MapasController {
   }
 
   @Get('buildings/:buildingId')
-  @ApiOperation({ summary: 'Obtener detalle de un edificio con sus pisos y modelo 3D' })
+  @ApiOperation({
+    summary: 'Obtener detalle de un edificio con sus pisos y modelo 3D',
+  })
   @ApiParam({ name: 'buildingId', description: 'UUID del edificio' })
-  @ApiResponse({ status: 200, description: 'Edificio con pisos y URL de modelo 3D' })
+  @ApiResponse({
+    status: 200,
+    description: 'Edificio con pisos y URL de modelo 3D',
+  })
   @ApiResponse({ status: 404, description: 'Edificio no encontrado' })
   async getBuilding(@Param('buildingId', ParseUUIDPipe) buildingId: string) {
-    return this.getBuildingUseCase.execute({ buildingId: buildingId as any });
+    return this.getBuildingUseCase.execute({
+      buildingId: buildingId as BuildingId,
+    });
   }
 
   @Get('floors/:floorId/model')
@@ -33,6 +45,6 @@ export class MapasController {
   @ApiResponse({ status: 200, description: 'Piso con URL de modelo 3D' })
   @ApiResponse({ status: 404, description: 'Piso no encontrado' })
   async getFloorModel(@Param('floorId', ParseUUIDPipe) floorId: string) {
-    return this.getFloorModelUseCase.execute({ floorId: floorId as any });
+    return this.getFloorModelUseCase.execute({ floorId: floorId as FloorId });
   }
 }

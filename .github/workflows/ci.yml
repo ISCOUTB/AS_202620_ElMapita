@@ -17,7 +17,7 @@ concurrency:
 
 env:
   NODE_VERSION: "20"
-  FLUTTER_VERSION: "3.22.0"
+  FLUTTER_VERSION: "3.44.0"
 
 jobs:
   # ==========================================================
@@ -75,9 +75,9 @@ jobs:
 
   # ==========================================================
   # Contrato de API - OpenAPI 3.1 versionado (DEC-06/DEC-07, ADR-0003)
-  # docs/api/openapi.v1.yaml es la fuente de verdad; se verifica en 3 capas.
-  # Capas 2 y 3 en continue-on-error mientras RSK-04 (deriva de prefijo de
-  # ruta) siga abierto — ver docs/adr/0003-contrato-openapi-versionado.md
+  # docs/api/openapi.v1.yaml es la fuente de verdad; se verifica en 3 capas,
+  # las 3 bloqueantes. RSK-04 (deriva de prefijo de ruta) se cerró en este
+  # mismo ADR — ver docs/adr/0003-contrato-openapi-versionado.md
   # ==========================================================
   contract:
     name: Contrato API (OpenAPI 3.1)
@@ -107,15 +107,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-role-key' }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'dummy-anon-key' }}
 
-      - name: Deriva contrato vs código (RSK-04 - no bloqueante aún)
+      - name: Deriva contrato vs código
         working-directory: backend
         run: npm run openapi:drift
-        continue-on-error: true
 
-      - name: Contrato vs runtime real (RSK-04 - no bloqueante aún)
+      - name: Contrato vs runtime real
         working-directory: backend
         run: npm run test:contracts
-        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-role-key' }}
@@ -128,7 +126,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Fuente de verdad: \`docs/api/openapi.v1.yaml\`. Ver \`docs/api/README.md\` y \`docs/adr/0003-contrato-openapi-versionado.md\`." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "RSK-04 (deriva de prefijo de ruta) sigue abierto: deriva y runtime son informativos (continue-on-error) hasta que se cierre — ver \`correcciones.md\`." >> $GITHUB_STEP_SUMMARY
+          echo "RSK-04 (deriva de prefijo de ruta) cerrado: las 3 capas son bloqueantes." >> $GITHUB_STEP_SUMMARY
 
   # ==========================================================
   # Frontend - Flutter (analyze, test, build web)
@@ -247,7 +245,7 @@ jobs:
           echo "- Backend: ${{ needs.backend.result }} (Node ${{ env.NODE_VERSION }})" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend: ${{ needs.frontend.result }} (Flutter ${{ env.FLUTTER_VERSION }})" >> $GITHUB_STEP_SUMMARY
           echo "- Docs: ${{ needs.docs.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Contract: ${{ needs.contract.result }} (OpenAPI 3.1, RSK-04 aún no bloqueante)" >> $GITHUB_STEP_SUMMARY
+          echo "- Contract: ${{ needs.contract.result }} (OpenAPI 3.1, RSK-04 cerrado)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Trazabilidad: \`docs/aspectos.md\` EC-01..EC-04 → \`docs/arc42#ec-0*\` → \`docs/c4\` → \`adr/0001\` → código → pruebas (pendientes)" >> $GITHUB_STEP_SUMMARY
           echo "Contrato de API: \`docs/api/openapi.v1.yaml\` → \`adr/0003\` → \`ci.yml#contract\`" >> $GITHUB_STEP_SUMMARY

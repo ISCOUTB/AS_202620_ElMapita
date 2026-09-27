@@ -1,7 +1,8 @@
-import { Entity, ValueObject } from '../../../shared/kernel';
+import { Entity } from '../../../shared/kernel';
 
 export type UserId = string & { readonly __brand: unique symbol };
-export type UserRole = 'estudiante' | 'visitante' | 'docente' | 'admin_staff' | 'admin_utb';
+export type UserRole =
+  'estudiante' | 'visitante' | 'docente' | 'admin_staff' | 'admin_utb';
 
 export interface User extends Entity<UserId> {
   email: string;
@@ -24,7 +25,11 @@ export interface AuthRepository {
 
 export interface SupabaseAuthClient {
   signInWithEmail(email: string, password: string): Promise<AuthTokens>;
-  signUpWithEmail(email: string, password: string, metadata: { nombre: string }): Promise<AuthTokens>;
+  signUpWithEmail(
+    email: string,
+    password: string,
+    metadata: { nombre: string },
+  ): Promise<AuthTokens>;
   refreshAccessToken(refreshToken: string): Promise<AuthTokens>;
   signOut(): Promise<void>;
   getUser(accessToken: string): Promise<User | null>;

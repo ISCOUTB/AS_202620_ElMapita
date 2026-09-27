@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Param, Body, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { GetPoiUseCase, ListPoisByFloorUseCase, CreatePoiUseCase } from '../application/use-cases';
-import type { CreatePoiInput } from '../domain';
+import {
+  GetPoiUseCase,
+  ListPoisByFloorUseCase,
+  CreatePoiUseCase,
+} from '../application/use-cases';
+import type { CreatePoiInput, FloorId, PoiId } from '../domain';
 
 @ApiTags('POIs')
-@Controller('api/v1/pois')
+@Controller('v1/pois')
 export class PoisController {
   constructor(
     private readonly getPoiUseCase: GetPoiUseCase,
@@ -18,7 +29,7 @@ export class PoisController {
   @ApiResponse({ status: 200, description: 'POI encontrado' })
   @ApiResponse({ status: 404, description: 'POI no encontrado' })
   async getPoi(@Param('poiId', ParseUUIDPipe) poiId: string) {
-    return this.getPoiUseCase.execute({ poiId: poiId as any });
+    return this.getPoiUseCase.execute({ poiId: poiId as PoiId });
   }
 
   @Get('floor/:floorId')
@@ -26,7 +37,7 @@ export class PoisController {
   @ApiParam({ name: 'floorId', description: 'UUID del piso' })
   @ApiResponse({ status: 200, description: 'Lista de POIs' })
   async listByFloor(@Param('floorId', ParseUUIDPipe) floorId: string) {
-    return this.listPoisByFloorUseCase.execute({ floorId: floorId as any });
+    return this.listPoisByFloorUseCase.execute({ floorId: floorId as FloorId });
   }
 
   @Post()

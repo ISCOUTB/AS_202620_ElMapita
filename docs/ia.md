@@ -267,3 +267,48 @@ El usuario renombró el archivo a `Introduccion a WWW.pdf` (sin tilde), lo que p
 ### Fuentes
 
 `backend/src/main.ts` · `backend/src/modules/*/interfaces/*.controller.ts` · `backend/src/modules/*/domain/index.ts` · `frontend/lib/core/network/dio_client.dart` · `frontend/lib/features/mapas/infrastructure/api/mapas_api.dart` · `docs/adr/0001-estilo-arquitectonico-propuesto.md` · `docs/adr/0002-restriccion-rendimiento-compatibilidad-dispositivos.md` · `.github/workflows/ci.yml` · `Introduccion a WWW.pdf` (presentación del curso, Jairo Serrano PhD.)
+
+---
+
+## 2026-09-21 — Sesión de trabajo con Claude Code
+
+### Instrucciones del día (resumen)
+
+El usuario compartió el feedback de una revisión automática (GitHub Actions) sobre la entrega "semana-07-evidencia-s7" en el commit `afae3be`: 4 de 10 criterios de la ficha en "Cumple", con "No cumple" explícito en "Correspondencia entre el contrato y la API implementada" (la deriva de rutas RSK-04) y varios "No verificado" por falta de evidencia citada. Pidió un plan para llevar la mayoría de los criterios a "Cumple", justificado con el proyecto real, no maquillado para el revisor.
+
+### Hallazgos durante la investigación previa al plan
+
+1. **El job `contract` ya había corrido en CI y pasó** (run [35549974182](https://github.com/ISCOUTB/AS_202620_ElMapita/actions/runs/35549974182)) — el revisor automático no lo vio porque nunca consultó GitHub Actions, solo el árbol de archivos.
+2. Los pasos `Deriva` y `Contrato vs runtime` de ese mismo run quedaron en verde por `continue-on-error`, pero registraron internamente `exit code 1` — evidencia real, ya en CI, de que la prueba de contrato detecta una incompatibilidad genuina.
+
+### Decisiones tomadas con el usuario (`AskUserQuestion`)
+
+- Corregir RSK-04 de verdad (quitar el prefijo duplicado) en vez de dejarlo como deuda.
+- Corregir también los dos problemas preexistentes que tenían rojo el pipeline completo (lint del backend, versión de Flutter en CI), documentados desde el 2026-09-07 en `correcciones.md` Criterio 8.
+- Preparar los cambios en el working tree sin hacer commit/push (el usuario decide cuándo subirlos).
+
+### Hallazgo adicional durante la implementación (no estaba en el plan aprobado)
+
+Al corregir RSK-04, las peticiones llegaron por primera vez a los controladores reales y expusieron que **14 casos de uso en 4 módulos** (`mapas`, `pois`, `auth`, `ubicacion`) recibían sus dependencias tipadas por interfaz TypeScript sin el decorador `@Inject('Token')` — Nest no podía resolverlas y el parámetro llegaba `undefined`, causando `500` en casi toda la API real (login, registro, listar edificios, POIs, ubicación). Se consultó al usuario antes de ampliar el alcance; aprobó corregirlo. Se agregó `@Inject('Token')` + `@Injectable()` en los 14 sitios, y la prueba de contrato runtime se reforzó para validar el **cuerpo** de cada respuesta 2xx contra el schema del contrato (antes solo comprobaba que la ruta no fuera 404, lo que ocultaba este bug).
+
+### Artefactos y resultados
+
+| Resultado | Contenido clave |
+|---|---|
+| **RSK-04 cerrado** | 4 controladores sin prefijo `api/` redundante; `HealthController` excluido del prefijo global. `npm run openapi:drift` pasa de 16 rutas en deriva a 0. |
+| **Bug de DI corregido** | `@Inject('BuildingRepository' \| 'FloorRepository' \| 'Model3DStorage' \| 'PoiRepository' \| 'SupabaseAuthClient' \| 'LocationProvider')` en `src/modules/{mapas,pois,auth,ubicacion}/application/use-cases.ts`. |
+| **Backend lint en 0 errores** | Filas de Supabase tipadas (`EdificioRow`, `PisoRow`, `PoiRow`, `SupabaseUser`) en los 3 adaptadores de infraestructura; imports no usados eliminados; `req: any` tipado con `express.Request`. |
+| **Pipeline completo verificable en verde** | `FLUTTER_VERSION` alineado a `3.44.0` (SDK real, verificado con `flutter --version` local); `pub get`/`analyze` confirmados en verde localmente. |
+| **`backend/test/contract/openapi.contract-spec.ts`** | Reescrito: valida cuerpo de respuesta (no solo status), cuerpos de petición realistas por operación, resolución de `$ref` de Ajv simplificada (schema autocontenido por operación en vez de `addSchema`/`getSchema`, que resultó frágil). 16/16 en verde. |
+| **`ci.yml` job `contract`** | Las 3 capas pasan de `continue-on-error: true` a bloqueantes. |
+| **Trazabilidad actualizada** | ADR-0003 (sección "Cierre de RSK-04" + hallazgo de DI + vínculo explícito con EC-01), arc42 (RSK-04 marcado cerrado, DEC-07 actualizado), `docs/api/README.md`, `correcciones.md` (Criterio 8 marcado resuelto, deuda RSK-04 marcada resuelta), rutas obsoletas sincronizadas en `docs/c4/C4_L2_Container.md`, `docs/c4/contexto.md` y el diagrama de secuencia de arc42 §6.1. |
+
+### Decisiones y aclaraciones
+
+- No se hizo commit ni push — todo quedó preparado en el working tree para que el usuario decida.
+- `npx eslint --fix` sobre todo el árbol reformateó ~12 archivos que no se habían tocado a mano (saltos de línea, comas finales) — cambios cosméticos verificados uno por uno, sin alterar lógica.
+- Quedan fuera de este ciclo (mencionados pero no resueltos): evidencia de SonarCloud (pendiente desde S6, requiere que el usuario cree la cuenta/token), y la conversión de `docs/glosario.docx`/`docs/CorteVertical_ElMapitaUTB.docx` a Markdown.
+
+### Fuentes
+
+`backend/src/modules/*/application/use-cases.ts` · `backend/src/main.ts` · `backend/scripts/{generate-openapi,check-openapi-drift}.ts` · `backend/test/contract/openapi.contract-spec.ts` · `.github/workflows/ci.yml` · `correcciones.md` (Criterio 8, sección 5) · `docs/adr/0003-contrato-openapi-versionado.md` · GitHub Actions run 35549974182

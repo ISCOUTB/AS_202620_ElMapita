@@ -1,28 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { LocationProvider, UserLocation, Coordinates } from '../../domain';
+import { LocationProvider, UserLocation } from '../../domain';
 
 @Injectable()
 export class PlatformLocationAdapter implements LocationProvider {
-  async getCurrentLocation(): Promise<UserLocation> {
-    return {
+  getCurrentLocation(): Promise<UserLocation> {
+    return Promise.resolve({
       coordinates: { latitude: 0, longitude: 0 },
       precisionMeters: 999,
       source: 'gps',
       timestamp: new Date(),
       uncertaintyShown: true,
-    };
+    });
   }
 
-  watchLocation(callback: (location: UserLocation) => void): () => void {
+  watchLocation(): () => void {
     return () => {};
   }
 
-  async requestPermission(): Promise<boolean> {
-    return true;
+  requestPermission(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 
-  async isPermissionGranted(): Promise<boolean> {
-    return true;
+  isPermissionGranted(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 }
 
@@ -48,10 +48,10 @@ export class FakeLocationProvider implements LocationProvider {
   ];
   private index = 0;
 
-  async getCurrentLocation(): Promise<UserLocation> {
+  getCurrentLocation(): Promise<UserLocation> {
     const location = this.locations[this.index % this.locations.length];
     this.index++;
-    return location;
+    return Promise.resolve(location);
   }
 
   watchLocation(callback: (location: UserLocation) => void): () => void {
@@ -62,11 +62,11 @@ export class FakeLocationProvider implements LocationProvider {
     return () => clearInterval(interval);
   }
 
-  async requestPermission(): Promise<boolean> {
-    return true;
+  requestPermission(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 
-  async isPermissionGranted(): Promise<boolean> {
-    return true;
+  isPermissionGranted(): Promise<boolean> {
+    return Promise.resolve(true);
   }
 }

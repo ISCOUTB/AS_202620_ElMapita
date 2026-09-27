@@ -1,8 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '../../shared/config/config.module';
 import { MapasController } from './interfaces/mapas.controller';
-import { GetBuildingUseCase, ListBuildingsUseCase, GetFloorModelUseCase } from './application/use-cases';
-import { SupabaseBuildingRepository, SupabaseFloorRepository } from './infrastructure/persistence/supabase-repositories';
+import {
+  GetBuildingUseCase,
+  ListBuildingsUseCase,
+  GetFloorModelUseCase,
+} from './application/use-cases';
+import {
+  SupabaseBuildingRepository,
+  SupabaseFloorRepository,
+} from './infrastructure/persistence/supabase-repositories';
 import { SupabaseModel3DStorage } from './infrastructure/storage/supabase-storage';
 
 @Module({
@@ -25,10 +32,6 @@ import { SupabaseModel3DStorage } from './infrastructure/storage/supabase-storag
       useClass: SupabaseModel3DStorage,
     },
   ],
-  exports: [
-    GetBuildingUseCase,
-    ListBuildingsUseCase,
-    GetFloorModelUseCase,
-  ],
+  exports: [GetBuildingUseCase, ListBuildingsUseCase, GetFloorModelUseCase],
 })
 export class MapasModule {}

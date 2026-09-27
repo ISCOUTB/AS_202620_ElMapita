@@ -12,7 +12,7 @@ import { AppModule } from '../src/app.module';
  */
 async function main() {
   const app = await NestFactory.create(AppModule, { logger: false });
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['health'] });
 
   const config = new DocumentBuilder()
     .setTitle('El Mapita UTB API')

@@ -3,7 +3,7 @@ export class AppError extends Error {
     message: string,
     public readonly code: string,
     public readonly statusCode: number = 500,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'AppError';
@@ -12,14 +12,22 @@ export class AppError extends Error {
 }
 
 export class DomainError extends AppError {
-  constructor(message: string, code: string, details?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    code: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message, code, 400, details);
     this.name = 'DomainError';
   }
 }
 
 export class InfrastructureError extends AppError {
-  constructor(message: string, code: string, details?: Record<string, unknown>) {
+  constructor(
+    message: string,
+    code: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message, code, 503, details);
     this.name = 'InfrastructureError';
   }
@@ -27,7 +35,10 @@ export class InfrastructureError extends AppError {
 
 export class NotFoundError extends AppError {
   constructor(resource: string, id: string) {
-    super(`${resource} with id ${id} not found`, 'NOT_FOUND', 404, { resource, id });
+    super(`${resource} with id ${id} not found`, 'NOT_FOUND', 404, {
+      resource,
+      id,
+    });
     this.name = 'NotFoundError';
   }
 }

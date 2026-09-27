@@ -7,13 +7,7 @@ import { PoisModule } from './modules/pois/pois.module';
 import { HealthController } from './health.controller';
 
 @Module({
-  imports: [
-    ConfigModule,
-    MapasModule,
-    UbicacionModule,
-    AuthModule,
-    PoisModule,
-  ],
+  imports: [ConfigModule, MapasModule, UbicacionModule, AuthModule, PoisModule],
   controllers: [HealthController],
   providers: [],
 })

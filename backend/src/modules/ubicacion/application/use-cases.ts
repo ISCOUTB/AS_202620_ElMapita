@@ -1,8 +1,24 @@
+import { Inject, Injectable } from '@nestjs/common';
 import { UseCase } from '../../../shared/kernel';
-import { UserLocation, LocationProvider, ManualLocationInput, ManualLocationOutput, Coordinates, GetCurrentLocationOutput, SetManualLocationInput, SetManualLocationOutput, RequestLocationPermissionOutput } from '../domain';
+import type {
+  UserLocation,
+  LocationProvider,
+  Coordinates,
+  GetCurrentLocationOutput,
+  SetManualLocationInput,
+  SetManualLocationOutput,
+  RequestLocationPermissionOutput,
+} from '../domain';
 
-export class GetCurrentLocationUseCase implements UseCase<void, GetCurrentLocationOutput> {
-  constructor(private readonly locationProvider: LocationProvider) {}
+@Injectable()
+export class GetCurrentLocationUseCase implements UseCase<
+  void,
+  GetCurrentLocationOutput
+> {
+  constructor(
+    @Inject('LocationProvider')
+    private readonly locationProvider: LocationProvider,
+  ) {}
 
   async execute(): Promise<GetCurrentLocationOutput> {
     const location = await this.locationProvider.getCurrentLocation();
@@ -10,7 +26,11 @@ export class GetCurrentLocationUseCase implements UseCase<void, GetCurrentLocati
   }
 }
 
-export class SetManualLocationUseCase implements UseCase<SetManualLocationInput, SetManualLocationOutput> {
+@Injectable()
+export class SetManualLocationUseCase implements UseCase<
+  SetManualLocationInput,
+  SetManualLocationOutput
+> {
   execute(input: SetManualLocationInput): Promise<SetManualLocationOutput> {
     const coordinates: Coordinates = {
       latitude: 0,
@@ -30,8 +50,15 @@ export class SetManualLocationUseCase implements UseCase<SetManualLocationInput,
   }
 }
 
-export class RequestLocationPermissionUseCase implements UseCase<void, RequestLocationPermissionOutput> {
-  constructor(private readonly locationProvider: LocationProvider) {}
+@Injectable()
+export class RequestLocationPermissionUseCase implements UseCase<
+  void,
+  RequestLocationPermissionOutput
+> {
+  constructor(
+    @Inject('LocationProvider')
+    private readonly locationProvider: LocationProvider,
+  ) {}
 
   async execute(): Promise<RequestLocationPermissionOutput> {
     const granted = await this.locationProvider.requestPermission();
