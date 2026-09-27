@@ -65,8 +65,9 @@ No se despliega Prometheus/Grafana — `curl <url>/metrics` devolviendo números
 ### 5. Secretos fuera del código
 
 - `render.yaml` declara los **nombres** de las env vars, no sus valores (`sync: false`).
-- Job `secrets` nuevo en `ci.yml`: `gitleaks/gitleaks-action@v2` sobre todo el historial, evidencia continua en cada run.
-- Verificación manual: `git log --all --full-history -p -- backend/.env` no devuelve nada (el archivo nunca se commiteó, solo `.env.example` con placeholders).
+- Job `secrets` nuevo en `ci.yml`: CLI de `gitleaks` vía Docker (`zricethezav/gitleaks:latest detect`) sobre todo el historial. Se descartó el Action oficial `gitleaks/gitleaks-action@v2`: desde un cambio reciente del proveedor, exige una licencia paga (`GITLEAKS_LICENSE`); el binario `gitleaks` en sí sigue siendo MIT/gratuito, así que se invoca directo.
+- **La primera corrida encontró un hallazgo real** (no simulado): un token de ejemplo (`?token=abc123def456`) en el badge de CircleCI que trae por defecto la plantilla de `nest new`, en `backend/README.md` — apunta al repositorio oficial `nestjs/nest`, no a este proyecto, y la línea ni siquiera se usaba en el archivo. Se eliminó la línea y se agregó `.gitleaksignore` documentando el fingerprint histórico (el commit que lo introdujo sigue en el historial; el escaneo de historial completo seguiría marcándolo sin el allowlist explícito). Verificado: `no leaks found` tras el fix.
+- Verificación manual adicional: `git log --all --full-history -p -- backend/.env` no devuelve nada (el archivo nunca se commiteó, solo `.env.example` con placeholders).
 
 ### 6. Pipeline: gate real + build de imagen
 

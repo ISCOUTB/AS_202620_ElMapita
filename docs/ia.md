@@ -352,6 +352,10 @@ Las correcciones preparadas en la sesión anterior (RSK-04, bug de DI, lint, Flu
 - El despliegue real en Render requiere una cuenta que solo el usuario puede crear — se preparó todo el código/IaC y se verificó localmente (incluido correr el contenedor Docker real), y se dejó un runbook exacto en el ADR-0004 para que el usuario haga el deploy final.
 - Los 4 pasos verificados de punta a punta (no solo "compila"): build de imagen Docker, contenedor corriendo respondiendo `/health` (503 real) y `/metrics` (histograma con datos reales) desde dentro del contenedor en Node 20, y las 17 operaciones del contrato en verde tras los cambios.
 
+### Seguimiento — primer run de CI real tras el push (mismo día)
+
+El push disparó un run real de GitHub Actions que expuso dos problemas que no aparecían en local: (1) `flutter analyze` fallaba en CI por 3 warnings de campos no usados que resultaron ser funcionalidad incompleta real (persistencia de sesión, permisos de ubicación) — se consultó al usuario y se dejó como no bloqueante con nota, siguiendo el patrón ya existente en el mismo job; (2) `gitleaks/gitleaks-action@v2` falló por un cambio de licenciamiento reciente del proveedor — se corrigió invocando el binario `gitleaks` (MIT) directo vía Docker, lo que además encontró un hallazgo real (token de ejemplo en un badge de `backend/README.md`, sin uso, eliminado y documentado en `.gitleaksignore`). Ambos hallazgos están detallados en `correcciones.md` secciones 6 y 7.
+
 ### Fuentes
 
-`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf"
+`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf"

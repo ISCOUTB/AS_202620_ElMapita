@@ -141,9 +141,11 @@ jobs:
           fetch-depth: 0
 
       - name: gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # CLI open-source directa (Docker), no el Action wrapper: gitleaks-action@v2
+        # ahora exige una licencia paga; el binario gitleaks sigue siendo MIT.
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            zricethezav/gitleaks:latest detect --source="/repo" --verbose --redact
 
   # ==========================================================
   # Docker - construye la imagen del backend (infraestructura como código)

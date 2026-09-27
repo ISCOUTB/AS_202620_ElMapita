@@ -142,6 +142,8 @@ Entregable de la Semana 8 ("Despliegue y operación"): URL pública, IaC version
 
 **Deuda declarada:** RSK-05 — el plan free de Render duerme el servicio tras inactividad; la primera petición tras dormir puede violar el p95 de EC-01. No se resuelve con un keep-alive artificial en esta entrega (ver ADR-0004); se mide en producción y se decide si se sube a plan pago.
 
+**Segundo bug de proveedor externo encontrado al verificar (no al leer documentación):** `gitleaks/gitleaks-action@v2` ahora exige una licencia paga (`GITLEAKS_LICENSE`) — cambio reciente del proveedor, no documentado hasta que el job falló en CI. Se corrigió invocando el binario `gitleaks` (MIT, gratuito) directo vía Docker en vez del Action wrapper. La primera corrida real encontró un hallazgo genuino: un token de ejemplo del badge de CircleCI de la plantilla `nest new` en `backend/README.md`, sin uso real, eliminado; el fingerprint histórico se documentó en `.gitleaksignore` en vez de reescribir el historial de git.
+
 ## 7. Deuda declarada — Frontend: dos funcionalidades incompletas detectadas por `flutter analyze` (2026-09-27)
 
 Al activar branch protection (sección 6), el pipeline necesitaba estar realmente en verde por primera vez, incluido el job Frontend — que llevaba tiempo fallando en CI sin que nadie lo notara (nadie hacía push que dependiera de que pasara). `flutter analyze` señala 3 warnings de campos no usados que, al revisar el código, **no son descuido trivial**:

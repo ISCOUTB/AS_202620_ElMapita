@@ -1,0 +1,10 @@
+
+# gitleaks allowlist — un fingerprint por línea, con el motivo documentado.
+# Ver docs/adr/0004-despliegue-render-docker.md sección "Secretos fuera del código".
+
+# Falso positivo: badge de CircleCI de la plantilla por defecto de NestJS
+# (`nest new`), con un token de ejemplo ficticio ("abc123def456") apuntando
+# al repositorio oficial nestjs/nest, no a este proyecto. La línea ya se
+# eliminó del README (era una referencia Markdown sin usar), pero el
+# fingerprint permanece en el historial de git en el commit que la introdujo.
+aa16382499acb17fc8c20369916d8b4b0697f742:backend/README.md:generic-api-key:5
