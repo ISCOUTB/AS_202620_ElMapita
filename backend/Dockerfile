@@ -1,15 +1,21 @@
 # El Mapita UTB — Backend API (NestJS)
 # Pieza "API" del modelo de seis piezas (S08): proceso de larga duración,
 # no función — el framework completo (DI, Swagger, pipes) se bootstrapea
-# una vez por proceso. Mismo Node que ci.yml (NODE_VERSION: "20").
+# una vez por proceso.
 #
-# Base node:20-slim (Debian/glibc), no node:20-alpine: Alpine usa musl libc,
-# que tiene un bug conocido de resolución DNS que cuelga peticiones salientes
-# en ciertas redes de nube (ver docs/adr/0004, hallazgo del primer deploy real
-# en Render — /health se colgaba llamando a Supabase pese a que la misma
-# llamada, hecha desde fuera del contenedor, respondía en <200ms).
+# Node 22, no 20: @supabase/supabase-js (y sus sub-paquetes) requieren
+# Node >=22 en tiempo de ejecución de verdad, no solo por el warning
+# EBADENGINE de npm — sin WebSocket nativo (Node 20 no lo trae), el cliente
+# lanza "Node.js detected but native WebSocket not found" en cada consulta.
+# Esto era la causa real de que /health nunca respondiera sano en Render
+# (ver docs/adr/0004, hallazgo del deploy real — no era Alpine/musl ni la
+# llave de servicio, aunque ambos se corrigieron en el camino).
+#
+# Base slim (Debian/glibc), no alpine: Alpine usa musl libc, que tiene un
+# bug conocido de resolución DNS que cuelga peticiones salientes en ciertas
+# redes de nube.
 
-FROM node:20-slim AS deps
+FROM node:22-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -19,7 +25,7 @@ COPY . .
 RUN npm run build \
   && npm prune --omit=dev
 
-FROM node:20-slim AS runtime
+FROM node:22-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN groupadd -r nodejs && useradd -r -g nodejs nestjs

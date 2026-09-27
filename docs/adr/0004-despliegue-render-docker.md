@@ -45,13 +45,18 @@ El backend NestJS de El Mapita UTB nunca se ha desplegado fuera de `localhost`. 
 
 ### 1. Contenedor + IaC versionada
 
-- **`backend/Dockerfile`** — build multi-stage (Node 20, mismo que `ci.yml`): `deps` (`npm ci`) → `build` (`npm run build` + `npm prune --omit=dev`) → `runtime` (solo `dist/`, `node_modules` de producción y `package.json`, usuario no-root). Verificado localmente: `docker build` + `docker run` exitosos, `/health` y `/metrics` responden correctamente **corriendo en Node 20 dentro del contenedor**, no solo en el Node local del equipo.
-- **Base `node:20-slim`, no `node:20-alpine`.** El primer deploy real en Render usaba Alpine y quedó atascado indefinidamente en el health check — Render lo marcaba "Timed out esperando /health", pero la misma llamada a la API REST de Supabase, probada directo desde fuera del contenedor, respondía en 148ms. Causa: Alpine usa `musl` en vez de `glibc`, que tiene un bug conocido de resolución DNS que cuelga peticiones salientes en redes de nube (un problema de infraestructura, no de código ni de datos — se descartó primero la hipótesis de esquema de base de datos vacío, que era real pero independiente). Verificado: reconstruyendo la imagen con `node:20-slim` y corriendo el contenedor contra el proyecto real de Supabase, `/health` respondió en menos de 3 segundos en vez de colgarse.
+- **`backend/Dockerfile`** — build multi-stage: `deps` (`npm ci`) → `build` (`npm run build` + `npm prune --omit=dev`) → `runtime` (solo `dist/`, `node_modules` de producción y `package.json`, usuario no-root). Verificado localmente: `docker build` + `docker run` exitosos, `/health` y `/metrics` responden correctamente **dentro del contenedor contra el proyecto real de Supabase**, no solo con datos falsos o en el Node local del equipo.
+- **Base `node:22-slim`, no `node:20-alpine` ni `node:20-slim`.** El deploy real en Render pasó por tres causas de fondo, encontradas una tras otra solo al desplegar de verdad (ninguna aparecía en local ni en CI, y las dos primeras eran reales pero no la causa final):
+  1. Esquema de Supabase vacío (el health check honesto marcó 503 correctamente) — resuelto con el DDL manual.
+  2. Se sospechó de `node:20-alpine` (Alpine usa `musl`, con un bug conocido de resolución DNS que cuelga peticiones salientes en redes de nube) y se cambió a `node:20-slim` — mejora real pero no resolvió el síntoma.
+  3. **Causa raíz definitiva**, encontrada instrumentando `/health` con logging de tiempos (ver sección 2): `@supabase/supabase-js` lanza `"Node.js detected but native WebSocket not found"` en cada consulta bajo Node 20 — no es el warning `EBADENGINE` de npm, es una excepción real en cada request, silenciosamente atrapada por nuestro propio `try/catch` y reportada como `503`, por lo que Render nunca veía un `200`. Se resolvió subiendo la imagen a `node:22-slim` (Node 22 trae `WebSocket` nativo). Verificado: mismo contenedor, mismas credenciales reales, `/health` responde `200` en ~1.2s (primera conexión) en vez de `503`/colgado.
 - **`render.yaml`** (raíz) — Blueprint de Render: un `web` service `runtime: docker` apuntando a ese Dockerfile, `healthCheckPath: /health`, `plan: free`. Los secretos (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `FRONTEND_URL`) se declaran con `sync: false` — Render pide su valor una sola vez en su dashboard, nunca se escriben en este archivo ni en git.
 
 ### 2. Health check honesto
 
 `HealthController.check()` ahora lanza `ServiceUnavailableException(checks)` cuando `supabase !== 'ok'`, en vez de devolver `200` con `"degraded"` en el cuerpo. Verificado: con `SUPABASE_URL` inválida, el endpoint responde **503** real (confirmado tanto en local como corriendo dentro del contenedor Docker). `render.yaml` usa este mismo path como `healthCheckPath`, así que Render deja de enviarle tráfico si el servicio se degrada de verdad — no solo si el proceso muere.
+
+Dos refuerzos agregados al diagnosticar el deploy real: (1) la consulta a Supabase corre contra un **timeout explícito de 4s** (`Promise.race`, con `clearTimeout` en el `finally` para no dejar temporizadores colgados) — el endpoint nunca se cuelga indefinidamente sin importar la causa, siempre responde rápido aunque sea con 503; (2) **logging explícito de tiempos** en cada paso (petición recibida, duración de la consulta, status final), independiente del autologging de pino-http (que excluye `/health` a propósito para no generar ruido) — esto fue lo que permitió encontrar la causa raíz real (sección "Decisión" arriba) en vez de seguir adivinando.
 
 ### 3. Logs estructurados
 
@@ -109,7 +114,7 @@ No se despliega Prometheus/Grafana — `curl <url>/metrics` devolviendo números
 | Compromiso | Mitigación |
 |---|---|
 | **Cold start en el plan free** | RSK-05, documentado arriba con punto de cruce explícito a plan pago. |
-| **`nestjs-pino` fijado en la serie 4.x, no la última (5.x)** | La 5.x exige Node ≥22.12; el proyecto usa Node 20 en CI/Docker. Revisar al momento de evaluar una migración de versión de Node de todo el proyecto (fuera de alcance aquí). |
+| **El proyecto subió a Node 22 en CI/Docker a mitad de esta entrega** | No fue una decisión de antemano — se descubrió que era obligatorio (`@supabase/supabase-js` falla en tiempo de ejecución en Node <22, no solo advierte). `nestjs-pino` había quedado fijado en `4.6.1` para evitar justo este salto; con Node 22 ya no es necesario mantenerlo así, pero tampoco hace daño (funciona en cualquier Node ≥14). |
 | **Branch protection cambia el flujo del equipo** | De ahora en adelante un push a `main` que rompa `quality-gate` no se refleja como aceptado sin intervención — el equipo debe esperar a que el check pase o abrir PR. Documentado en `correcciones.md`. |
 | **No hay Prometheus/Grafana desplegado** | Decisión de alcance explícita: `/metrics` crudo es evidencia suficiente para esta escala; se documenta como próximo paso natural si el proyecto creciera. |
 

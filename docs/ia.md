@@ -362,6 +362,16 @@ Al corregir el hallazgo de `backend/README.md`, el párrafo del ADR-0004 que lo 
 
 **Resultado final:** [run 36303969651](https://github.com/ISCOUTB/AS_202620_ElMapita/actions/runs/36303969651) — **primer pipeline completo en verde de todo el proyecto** (7/7 jobs: Docker build, Docs, Backend, Secretos, Frontend, Contrato API, Quality Gate). Se citó esta evidencia en `docs/adr/0004-despliegue-render-docker.md` y `correcciones.md` en un commit final de solo documentación.
 
+### Seguimiento — el deploy real en Render expuso tres causas más (mismo día, horas después)
+
+El pipeline en verde no fue el final de la historia: el primer deploy real contra un proyecto de Supabase nuevo del usuario falló repetidamente. Se diagnosticó en capas, cada una real pero no siempre la causa completa:
+
+1. Esquema de base de datos vacío (sin tablas `edificios`/`pisos`/`pois`) — el health check honesto marcó 503 correctamente; se resolvió con DDL manual en el SQL Editor de Supabase.
+2. Se sospechó de `node:20-alpine` (bug conocido de DNS de `musl`) y se cambió a `node:20-slim` — mejora real, pero el síntoma ("Timed Out" esperando `/health`) persistió.
+3. **Causa raíz real**, encontrada solo tras instrumentar `/health` con logging de tiempos explícito (antes silenciado a propósito): `@supabase/supabase-js` lanza `"Node.js detected but native WebSocket not found"` en cada consulta bajo Node 20 — el warning `EBADENGINE` de npm (visible desde el inicio de esta sesión) no era cosmético. Se corrigió subiendo `backend/Dockerfile` y `ci.yml` a Node 22. Verificado: `/health` responde `200` real contra el proyecto de Supabase del usuario en ~1.2s.
+
+También se detectó y arregló (fuera de lo esperado): una llave de servicio (`SUPABASE_SERVICE_ROLE_KEY`) mal puesta en Render por confusión con la nomenclatura nueva de Supabase (`publishable`/`secret` en vez de `anon`/`service_role`), y un fingerprint más de gitleaks por auto-referencia en este mismo archivo.
+
 ### Fuentes
 
-`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651
+`backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651, 36351332554
