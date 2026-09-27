@@ -74,6 +74,7 @@ No se despliega Prometheus/Grafana — `curl <url>/metrics` devolviendo números
 
 - Job `docker` nuevo en `ci.yml`: construye `backend/Dockerfile` en cada push — si el Dockerfile se rompe, el pipeline lo detecta antes que Render.
 - **Branch protection en `main`**: regla que exige que `quality-gate` pase antes de aceptar cambios. Esto es "bloquee el merge ante fallos" literalmente. Cambia el flujo del equipo: hasta ahora se hacía push directo a `main` sin PR; de ahora en adelante el check debe pasar.
+- **Evidencia:** [run 36303969651](https://github.com/ISCOUTB/AS_202620_ElMapita/actions/runs/36303969651) — primer pipeline completo en verde del proyecto (7/7 jobs, incluido `Quality Gate`), tras dos iteraciones corrigiendo hallazgos reales de `gitleaks` (ver sección 5).
 
 ## RSK-05 (nuevo riesgo)
 
