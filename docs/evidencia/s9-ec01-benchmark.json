@@ -1,0 +1,15 @@
+{
+  "fecha": "2026-10-04T22:10:50.556Z",
+  "base": "https://elmapita-utb-api.onrender.com",
+  "n": 30,
+  "statusBuildingFloor": [
+    "500/500"
+  ],
+  "minMs": 901,
+  "p50Ms": 1201,
+  "p95Ms": 1637,
+  "maxMs": 1684,
+  "umbralP95Ms": 5000,
+  "exitosas": false,
+  "cumple": false
+}

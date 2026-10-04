@@ -389,3 +389,36 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 ### Fuentes
 
 `backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651, 36351332554 · Deploy real verificado en `https://elmapita-utb-api.onrender.com` (`/health`, `/metrics`, `/api/v1/map/buildings`) vía `curl` ejecutado directamente desde este entorno
+
+---
+
+## S9 — 2026-10-04 — Validador de precisión de ubicación (EC-03), ADRs de reemplazo, SonarCloud
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez.
+
+### Prompts usados (resumidos)
+
+1. Plan de acción S9 para resolver las no conformidades (nueva porción con IA, prueba en rojo, mediciones EC-01..EC-04, auditoría de erosión, ADR generativo, supersede de ADR-0001/0003, SonarCloud, `.mailmap`). La IA propuso el plan antes de tocar archivos.
+2. Confirmación del validador de precisión de ubicación como nueva porción y datos de SonarCloud (`organization: isco-utb`, `projectKey: ISCOUTB_AS_202620_ElMapita`) y de identidad de Angel.
+
+### Qué se aceptó
+
+- `domain/accuracy-policy.ts` + `application/get-validated-location.use-case.ts` (umbral ≤ 15 m, timeout 10 s, fallback manual sin exponer la posición imprecisa) y su spec (10 casos). Registrado en `UbicacionModule` sin añadir endpoint (no altera el contrato OpenAPI).
+- ADR-0005 y ADR-0006 (supersede de 0001 y 0003, restaurados desde `aa16382` y `afae3be`), ADR-0007 (no componente generativo).
+- Job `sonarcloud` en `ci.yml` con Quality Gate, `sonar-project.properties`, `.mailmap`.
+- `docs/auditoria-erosion-s9.md`.
+
+### Qué se corrigió
+
+- **Run en rojo deliberado:** la primera versión de `evaluateAccuracy` usó `accuracy < 15` (umbral exclusivo) como defecto de borde simulado; la prueba del caso 15 m falló (`docs/evidencia/s9-run-rojo.txt`, commit `7d64d5f`) y se corrigió a `<= 15` (`s9-run-verde.txt`, commit `cac2f97`). El defecto fue introducido a propósito para documentar el procedimiento, no es un hallazgo espontáneo.
+- `bench-ec01.mjs` inicialmente reportaba `cumple: true` basándose solo en el p95 aunque las 30 respuestas eran HTTP 500; se corrigió para exigir 200 en todas las iteraciones. Esa corrida real mostró que los endpoints de EC-01 fallan en producción (hallazgo 4 de la auditoría).
+
+### Rechazos con motivo técnico
+
+- **Se rechazó generar "datos de medición realistas" para EC-01..EC-04.** Son la evidencia de que un umbral (p95 < 5 s, ≥ 30 FPS, ≤ 15 m, offline < 5 s) se cumple; números inventados no son medibles ni reproducibles y ocultarían defectos reales (de hecho, la medición real descubrió HTTP 500 en producción). Se reemplazó por: benchmark real ejecutable, pruebas unitarias reales (EC-03) y estado `Pendiente (requiere dispositivo)` para FPS y offline hasta contar con corridas reales.
+- **Se rechazó añadir una dependencia solo para producir un diff contra S8:** la nueva porción no la necesita; el diff real son los archivos nuevos, `sonar-project.properties`, el job de CI y los ADR.
+
+### Límites conocidos
+
+- Sin acceso a logs de Render, la causa del 500 en producción queda sin determinar.
+- Los jobs de SonarCloud requieren el secreto `SONAR_TOKEN` en GitHub; hasta crearlo, el job fallará.

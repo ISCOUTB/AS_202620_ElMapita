@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { UbicacionController } from './interfaces/ubicacion.controller';
+import { GetValidatedLocationUseCase } from './application/get-validated-location.use-case';
 import {
   GetCurrentLocationUseCase,
   SetManualLocationUseCase,
@@ -16,6 +17,7 @@ import {
     GetCurrentLocationUseCase,
     SetManualLocationUseCase,
     RequestLocationPermissionUseCase,
+    GetValidatedLocationUseCase,
     {
       provide: 'LocationProvider',
       useClass:
@@ -28,6 +30,7 @@ import {
     GetCurrentLocationUseCase,
     SetManualLocationUseCase,
     RequestLocationPermissionUseCase,
+    GetValidatedLocationUseCase,
   ],
 })
 export class UbicacionModule {}
