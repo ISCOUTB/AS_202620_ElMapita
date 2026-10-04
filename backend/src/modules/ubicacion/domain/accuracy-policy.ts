@@ -19,7 +19,7 @@ export function evaluateAccuracy(
   if (!Number.isFinite(accuracy) || accuracy < 0) {
     return { accepted: false, reason: 'invalid' };
   }
-  if (accuracy < maxMeters) {
+  if (accuracy <= maxMeters) {
     return { accepted: true, location };
   }
   return { accepted: false, reason: 'imprecise' };

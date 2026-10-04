@@ -1,0 +1,8 @@
+# Run en VERDE S9 - 2026-10-04 - comando: cd backend && npx jest (suite completa)
+
+
+Test Suites: 2 passed, 2 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        4.835 s, estimated 5 s
+Ran all test suites.
