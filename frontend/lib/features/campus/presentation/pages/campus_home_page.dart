@@ -1,6 +1,7 @@
 // lib/features/campus/presentation/pages/campus_home_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/locale/locale_cubit.dart';
@@ -43,6 +44,11 @@ class _CampusHomePageState extends State<CampusHomePage> {
               : categoryLabel(context, _selectedCategory!),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Modelo 3D de prueba',
+            onPressed: () => context.push('/modelo-prueba'),
+            icon: const Icon(Icons.view_in_ar, color: AppTheme.onPrimary),
+          ),
           IconButton(
             tooltip: l10n.languageToggleTooltip,
             onPressed: () => context.read<LocaleCubit>().toggle(),
