@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { getSupabaseClient } from '../../../../shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
 import { BuildingId, ModelVersion, Model3DStorage } from '../../domain';
@@ -24,7 +24,9 @@ export class SupabaseModel3DStorage implements Model3DStorage {
       .createSignedUrl(path, 3600); // 1 hora
 
     if (error || !data) {
-      throw new Error(`Failed to get signed URL for model: ${error?.message}`);
+      throw new NotFoundException(
+        `Modelo 3D no disponible (${path}): ${error?.message}`,
+      );
     }
 
     return data.signedUrl;
