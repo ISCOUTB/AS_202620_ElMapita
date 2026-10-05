@@ -422,3 +422,29 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 
 - Sin acceso a logs de Render, la causa del 500 en producción queda sin determinar.
 - Los jobs de SonarCloud requieren el secreto `SONAR_TOKEN` en GitHub; hasta crearlo, el job fallará.
+
+### Seguimiento S9 — PR #2, correcciones posteriores y limitación de SonarCloud (2026-10-04/05)
+
+**Cambios adicionales hechos con IA tras la primera entrega:**
+
+- **Defecto real hallado por la medición de EC-01:** el benchmark contra Render mostró HTTP 500 en `GET /api/v1/map/buildings/{id}` y `GET /api/v1/map/floors/{id}/model`. Por lectura de código, la causa más probable (no confirmada, sin acceso al archivo en Supabase Storage) es que falta el objeto `modelos-3d/<buildingId>/v1.glb`, y `createSignedUrl` fallaba con un `Error` genérico. Se corrigió lo verificable: edificio, piso o modelo inexistente ahora responde **404** (`NotFoundException`) como dice el contrato, con una prueba unitaria nueva (commit `ea4ad2a`). 12/12 tests unitarios y 17/17 de contrato en verde (con variables de entorno dummy, como en CI).
+- **CI del PR #2:** `gitleaks` marcó el `projectKey` de SonarCloud como `generic-api-key` (falso positivo: es un identificador público). Se agregaron los dos fingerprints a `.gitleaksignore` (commit `49b5fc1`), siguiendo el patrón de S08.
+- **Descartado un camino:** el PR se creó con título "Evidencia S9 — Generación verificada y trazable" y se recomendó fusionarlo con *merge commit* (no *squash*) para conservar el historial rojo→verde.
+
+**Limitación: no se pudo completar la integración de SonarCloud (falta de permisos).**
+
+- El job `sonarcloud` de `ci.yml` y `sonar-project.properties` están escritos y el proyecto de SonarCloud aparece enlazado al repositorio (`Detected project binding: BOUND`). El secreto `SONAR_TOKEN` fue creado por el integrante bajo su usuario de SonarCloud.
+- El análisis falla con `ERROR Not authorized or project not found` al crear el análisis: ese usuario no tiene el permiso *Execute Analysis* en la organización `isco-utb`, y el equipo **no es administrador de esa organización**, por lo que no puede concederlo ni generar un token con ese permiso. No es un error de configuración del repositorio.
+- **Decisión:** el job queda **no bloqueante** (`continue-on-error: true`) y se retiró de las condiciones de fallo de `Quality Gate (EC-01..EC-04)`, para no bloquear el PR por algo que el equipo no puede resolver. El requisito "Sonar con Quality Gate" **queda cumplido en configuración pero no en ejecución**: el Quality Gate de SonarCloud no se evalúa hasta que haya permisos.
+- **Para cerrarlo:** un administrador de `isco-utb` debe conceder *Execute Analysis* al usuario del token (o generar un token propio y guardarlo como `SONAR_TOKEN`), y luego se elimina `continue-on-error` del job y se reincorpora su resultado al gate. El check externo "SonarCloud Code Analysis" (app de SonarCloud) falla por la misma causa.
+
+### Estado final del trabajo de S9 respecto a la entrega
+
+| Punto | Estado |
+|---|---|
+| 1. Nueva porción (validador EC-03), rojo→verde, `ia.md` | Hecho |
+| 2. EC-01..EC-04 | EC-03 completado en backend; EC-01 medido pero **no válido** (HTTP 500, pendiente subir el `.glb` y re-medir); EC-02 y EC-04 **pendientes** (requieren dispositivo). No se inventaron datos |
+| 3. Auditoría de erosión y ADR-0007 | Hecho |
+| 4. ADR-0005/0006 (supersede de 0001/0003) | Hecho |
+| 5. SonarCloud | Escrito; **no ejecutable por falta de permisos** (ver arriba) |
+| 6. `.mailmap` y configuración de git | Hecho |
