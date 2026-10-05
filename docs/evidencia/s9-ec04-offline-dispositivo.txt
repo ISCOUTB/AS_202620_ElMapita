@@ -1,0 +1,31 @@
+# EC-04 en dispositivo SM A556E (Android 16) - 2026-10-05 - flutter test integration_test/offline_map_test.dart
+# Control online incluido: valida que el arnes avanza el bloc. Resultado: la app NO cumple EC-04.
+
+00:00 +0: EC-04 offline con cache: 20 corridas < 5 s con banner Offline
+EC04_CONTROL online -> BuildingLoaded
+EC04_RESULT ok=0/20
+corrida 1: 5020 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 2: 5076 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 3: 5075 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 4: 5069 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 5: 5093 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 6: 5014 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 7: 5038 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 8: 5079 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 9: 5033 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 10: 5103 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 11: 5098 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 12: 5113 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 13: 5073 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 14: 5078 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 15: 5106 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 16: 5091 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 17: 5005 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 18: 5050 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 19: 5025 ms, estado=MapasError, bannerOffline=false, FALLA
+corrida 20: 5086 ms, estado=MapasError, bannerOffline=false, FALLA
+0/20 corridas cumplen EC-04
+  EC-04 offline con cache: 20 corridas < 5 s con banner Offline
+01:43 +0 -1: EC-04 offline con cache: 20 corridas < 5 s con banner Offline [E]
+  The test description was: EC-04 offline con cache: 20 corridas < 5 s con banner Offline
+  C:/xampp/htdocs/AS_202620_ElMapita/frontend/integration_test/offline_map_test.dart: EC-04 offline con cache: 20 corridas < 5 s con banner Offline

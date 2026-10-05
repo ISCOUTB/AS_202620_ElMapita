@@ -448,3 +448,22 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 | 4. ADR-0005/0006 (supersede de 0001/0003) | Hecho |
 | 5. SonarCloud | Escrito; **no ejecutable por falta de permisos** (ver arriba) |
 | 6. `.mailmap` y configuración de git | Hecho |
+
+### Seguimiento S9 — pruebas en dispositivo para EC-02 y EC-04 (2026-10-05)
+
+**Prompt:** el usuario conectó un dispositivo (Samsung SM A556E, Android 16) y pidió medir EC-02 y EC-04 ("opción A": medir y documentar lo que existe, sin implementar el renderizador 3D ni el modo offline).
+
+**Qué se aceptó:** pruebas de integración nuevas en `frontend/integration_test/` (`offline_map_test.dart`, `frame_timing_test.dart`, `support.dart`), `test_driver/integration_test.dart` y la dependencia de desarrollo `integration_test` en `pubspec.yaml` (diff real contra S8). Ejecutadas en el dispositivo; la evidencia está en `docs/evidencia/s9-ec04-offline-dispositivo.txt` y `s9-ec02-fotogramas-dispositivo.txt`.
+
+**Qué se corrigió (defectos de mi propio arnés de pruebas, detectados antes de interpretar resultados):**
+1. El primer run de EC-04 dio 0/20 con estado `MapasInitial` (ni siquiera "cargando"). No se tomó como resultado de la app: la E/S real no avanzaba con `tester.pump`; se pasó a `tester.runAsync`.
+2. Se añadió una **corrida de control online** (API en memoria) que debe llegar a `BuildingLoaded`; sirve para distinguir un fallo del arnés de un fallo de la app.
+3. Segundo defecto del arnés: reutilizar el mismo `MapPage` entre corridas conservaba su `State`, así que `initState` (que lanza la carga) no se ejecutaba. Se agregó una `key` por corrida.
+4. `flutter test` no admite `--profile`; las métricas de fotogramas se obtuvieron con `flutter drive --profile`.
+
+**Resultados reales (no hay datos inventados):**
+- **EC-04: no cumple, 0/20.** Con el arnés validado por el control, sin red la app queda en `MapasError` y no existe banner "Offline". Causa en código: `LoadBuildingUseCase` consulta la API antes que la caché y solo se cachea el `.glb`, no los datos del edificio. Corrección pendiente (fuera del alcance de S9 acordado).
+- **EC-02: parcial.** 2398 fotogramas en 60 s, 100 % ≤ 33,3 ms, p95 = 11,0 ms, máx. 31,8 ms. **No demuestra EC-02**: es un repintado sintético del placeholder (rotación continua) porque el frontend no tiene renderizador 3D (`map_page.dart`, TODO), y no se midió el cambio de piso ≤ 500 ms.
+- **EC-01** sigue sin medición válida hasta que exista el `.glb` en Supabase Storage.
+
+**Rechazo con motivo técnico:** no se reportó el "100 % ≤ 33,3 ms" como cumplimiento de EC-02 ni se afinó la prueba hasta que "pasara" EC-04; ambas habrían producido evidencia que no corresponde al comportamiento real del producto.
