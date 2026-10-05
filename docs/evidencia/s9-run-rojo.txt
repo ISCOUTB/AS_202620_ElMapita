@@ -1,0 +1,26 @@
+# Run en ROJO S9 - 2026-10-04 - comando: cd backend && npx jest src/modules/ubicacion
+# Defecto: umbral exclusivo (accuracy < 15) en vez de inclusivo (<= 15) segun EC-03
+
+FAIL src/modules/ubicacion/application/get-validated-location.use-case.spec.ts
+  ● EC-03 evaluateAccuracy › acepta exactamente 15 m (umbral inclusivo: accuracy <= 15 m)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      23 |   });
+      24 |   it('acepta exactamente 15 m (umbral inclusivo: accuracy <= 15 m)', () => {
+    > 25 |     expect(evaluateAccuracy(loc(15)).accepted).toBe(true);
+         |                                                ^
+      26 |   });
+      27 |   it('rechaza 15.01 m como imprecisa', () => {
+      28 |     expect(evaluateAccuracy(loc(15.01))).toEqual({
+
+      at Object.<anonymous> (modules/ubicacion/application/get-validated-location.use-case.spec.ts:25:48)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 9 passed, 10 total
+Snapshots:   0 total
+Time:        6.879 s
+Ran all test suites matching src/modules/ubicacion.

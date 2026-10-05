@@ -48,9 +48,12 @@ dependencies:
   path: ^1.9.0
   intl: ^0.20.2
   uuid: ^4.5.1
+  model_viewer_plus: ^1.10.0
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4

@@ -19,3 +19,7 @@ beb105cc799e3511b2a1c54b6c61172f4ac8aa24:docs/adr/0004-despliegue-render-docker.
 # ejemplo al narrar el hallazgo anterior. Ya reescrito en el archivo, pero
 # el commit histórico permanece.
 166ce9e63872714fafa2e2ecae9a2bbb0edac462:docs/ia.md:generic-api-key:361
+
+# S9: projectKey de SonarCloud (identificador publico, no es un secreto) en sonar-project.properties y en la entrada de ia.md
+0d7da070da9020c927476ed4b897d2dfe65e2b80:sonar-project.properties:generic-api-key:2
+0d7da070da9020c927476ed4b897d2dfe65e2b80:docs/ia.md:generic-api-key:402

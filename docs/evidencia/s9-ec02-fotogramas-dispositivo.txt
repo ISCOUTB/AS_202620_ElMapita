@@ -1,0 +1,4 @@
+# EC-02 (PARCIAL) en SM A556E - 2026-10-05 - flutter drive --profile integration_test/frame_timing_test.dart
+# Carga sintetica: repintado del placeholder del mapa con rotacion continua 60 s. NO es renderizado 3D (no existe aun).
+
+EC02_RESULT frames=2398 pct<=33.3ms=100.0 p95=11.0ms max=31.761ms

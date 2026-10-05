@@ -389,3 +389,81 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 ### Fuentes
 
 `backend/Dockerfile` · `render.yaml` · `backend/src/health.controller.ts` · `backend/src/shared/observability/*.ts` · `backend/tsconfig.build.json` · `.github/workflows/ci.yml` · `.gitleaksignore` · `docs/adr/0004-despliegue-render-docker.md` · Presentaciones "S08-despliegue-y-operacion.pdf" y "SD_Lecture0 Serverless.pdf" · GitHub Actions runs 36301645797, 36303579270, 36303813546, 36303969651, 36351332554 · Deploy real verificado en `https://elmapita-utb-api.onrender.com` (`/health`, `/metrics`, `/api/v1/map/buildings`) vía `curl` ejecutado directamente desde este entorno
+
+---
+
+## S9 — 2026-10-04 — Validador de precisión de ubicación (EC-03), ADRs de reemplazo, SonarCloud
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez.
+
+### Prompts usados (resumidos)
+
+1. Plan de acción S9 para resolver las no conformidades (nueva porción con IA, prueba en rojo, mediciones EC-01..EC-04, auditoría de erosión, ADR generativo, supersede de ADR-0001/0003, SonarCloud, `.mailmap`). La IA propuso el plan antes de tocar archivos.
+2. Confirmación del validador de precisión de ubicación como nueva porción y datos de SonarCloud (`organization: isco-utb`, `projectKey: ISCOUTB_AS_202620_ElMapita`) y de identidad de Angel.
+
+### Qué se aceptó
+
+- `domain/accuracy-policy.ts` + `application/get-validated-location.use-case.ts` (umbral ≤ 15 m, timeout 10 s, fallback manual sin exponer la posición imprecisa) y su spec (10 casos). Registrado en `UbicacionModule` sin añadir endpoint (no altera el contrato OpenAPI).
+- ADR-0005 y ADR-0006 (supersede de 0001 y 0003, restaurados desde `aa16382` y `afae3be`), ADR-0007 (no componente generativo).
+- Job `sonarcloud` en `ci.yml` con Quality Gate, `sonar-project.properties`, `.mailmap`.
+- `docs/auditoria-erosion-s9.md`.
+
+### Qué se corrigió
+
+- **Run en rojo deliberado:** la primera versión de `evaluateAccuracy` usó `accuracy < 15` (umbral exclusivo) como defecto de borde simulado; la prueba del caso 15 m falló (`docs/evidencia/s9-run-rojo.txt`, commit `7d64d5f`) y se corrigió a `<= 15` (`s9-run-verde.txt`, commit `cac2f97`). El defecto fue introducido a propósito para documentar el procedimiento, no es un hallazgo espontáneo.
+- `bench-ec01.mjs` inicialmente reportaba `cumple: true` basándose solo en el p95 aunque las 30 respuestas eran HTTP 500; se corrigió para exigir 200 en todas las iteraciones. Esa corrida real mostró que los endpoints de EC-01 fallan en producción (hallazgo 4 de la auditoría).
+
+### Rechazos con motivo técnico
+
+- **Se rechazó generar "datos de medición realistas" para EC-01..EC-04.** Son la evidencia de que un umbral (p95 < 5 s, ≥ 30 FPS, ≤ 15 m, offline < 5 s) se cumple; números inventados no son medibles ni reproducibles y ocultarían defectos reales (de hecho, la medición real descubrió HTTP 500 en producción). Se reemplazó por: benchmark real ejecutable, pruebas unitarias reales (EC-03) y estado `Pendiente (requiere dispositivo)` para FPS y offline hasta contar con corridas reales.
+- **Se rechazó añadir una dependencia solo para producir un diff contra S8:** la nueva porción no la necesita; el diff real son los archivos nuevos, `sonar-project.properties`, el job de CI y los ADR.
+
+### Límites conocidos
+
+- Sin acceso a logs de Render, la causa del 500 en producción queda sin determinar.
+- Los jobs de SonarCloud requieren el secreto `SONAR_TOKEN` en GitHub; hasta crearlo, el job fallará.
+
+### Seguimiento S9 — PR #2, correcciones posteriores y limitación de SonarCloud (2026-10-04/05)
+
+**Cambios adicionales hechos con IA tras la primera entrega:**
+
+- **Defecto real hallado por la medición de EC-01:** el benchmark contra Render mostró HTTP 500 en `GET /api/v1/map/buildings/{id}` y `GET /api/v1/map/floors/{id}/model`. Por lectura de código, la causa más probable (no confirmada, sin acceso al archivo en Supabase Storage) es que falta el objeto `modelos-3d/<buildingId>/v1.glb`, y `createSignedUrl` fallaba con un `Error` genérico. Se corrigió lo verificable: edificio, piso o modelo inexistente ahora responde **404** (`NotFoundException`) como dice el contrato, con una prueba unitaria nueva (commit `ea4ad2a`). 12/12 tests unitarios y 17/17 de contrato en verde (con variables de entorno dummy, como en CI).
+- **CI del PR #2:** `gitleaks` marcó el `projectKey` de SonarCloud como `generic-api-key` (falso positivo: es un identificador público). Se agregaron los dos fingerprints a `.gitleaksignore` (commit `49b5fc1`), siguiendo el patrón de S08.
+- **Descartado un camino:** el PR se creó con título "Evidencia S9 — Generación verificada y trazable" y se recomendó fusionarlo con *merge commit* (no *squash*) para conservar el historial rojo→verde.
+
+**Limitación: no se pudo completar la integración de SonarCloud (falta de permisos).**
+
+- El job `sonarcloud` de `ci.yml` y `sonar-project.properties` están escritos y el proyecto de SonarCloud aparece enlazado al repositorio (`Detected project binding: BOUND`). El secreto `SONAR_TOKEN` fue creado por el integrante bajo su usuario de SonarCloud.
+- El análisis falla con `ERROR Not authorized or project not found` al crear el análisis: ese usuario no tiene el permiso *Execute Analysis* en la organización `isco-utb`, y el equipo **no es administrador de esa organización**, por lo que no puede concederlo ni generar un token con ese permiso. No es un error de configuración del repositorio.
+- **Decisión:** el job queda **no bloqueante** (`continue-on-error: true`) y se retiró de las condiciones de fallo de `Quality Gate (EC-01..EC-04)`, para no bloquear el PR por algo que el equipo no puede resolver. El requisito "Sonar con Quality Gate" **queda cumplido en configuración pero no en ejecución**: el Quality Gate de SonarCloud no se evalúa hasta que haya permisos.
+- **Para cerrarlo:** un administrador de `isco-utb` debe conceder *Execute Analysis* al usuario del token (o generar un token propio y guardarlo como `SONAR_TOKEN`), y luego se elimina `continue-on-error` del job y se reincorpora su resultado al gate. El check externo "SonarCloud Code Analysis" (app de SonarCloud) falla por la misma causa.
+
+### Estado final del trabajo de S9 respecto a la entrega
+
+| Punto | Estado |
+|---|---|
+| 1. Nueva porción (validador EC-03), rojo→verde, `ia.md` | Hecho |
+| 2. EC-01..EC-04 | EC-03 completado en backend; EC-01 medido pero **no válido** (HTTP 500, pendiente subir el `.glb` y re-medir); EC-02 y EC-04 **pendientes** (requieren dispositivo). No se inventaron datos |
+| 3. Auditoría de erosión y ADR-0007 | Hecho |
+| 4. ADR-0005/0006 (supersede de 0001/0003) | Hecho |
+| 5. SonarCloud | Escrito; **no ejecutable por falta de permisos** (ver arriba) |
+| 6. `.mailmap` y configuración de git | Hecho |
+
+### Seguimiento S9 — pruebas en dispositivo para EC-02 y EC-04 (2026-10-05)
+
+**Prompt:** el usuario conectó un dispositivo (Samsung SM A556E, Android 16) y pidió medir EC-02 y EC-04 ("opción A": medir y documentar lo que existe, sin implementar el renderizador 3D ni el modo offline).
+
+**Qué se aceptó:** pruebas de integración nuevas en `frontend/integration_test/` (`offline_map_test.dart`, `frame_timing_test.dart`, `support.dart`), `test_driver/integration_test.dart` y la dependencia de desarrollo `integration_test` en `pubspec.yaml` (diff real contra S8). Ejecutadas en el dispositivo; la evidencia está en `docs/evidencia/s9-ec04-offline-dispositivo.txt` y `s9-ec02-fotogramas-dispositivo.txt`.
+
+**Qué se corrigió (defectos de mi propio arnés de pruebas, detectados antes de interpretar resultados):**
+1. El primer run de EC-04 dio 0/20 con estado `MapasInitial` (ni siquiera "cargando"). No se tomó como resultado de la app: la E/S real no avanzaba con `tester.pump`; se pasó a `tester.runAsync`.
+2. Se añadió una **corrida de control online** (API en memoria) que debe llegar a `BuildingLoaded`; sirve para distinguir un fallo del arnés de un fallo de la app.
+3. Segundo defecto del arnés: reutilizar el mismo `MapPage` entre corridas conservaba su `State`, así que `initState` (que lanza la carga) no se ejecutaba. Se agregó una `key` por corrida.
+4. `flutter test` no admite `--profile`; las métricas de fotogramas se obtuvieron con `flutter drive --profile`.
+
+**Resultados reales (no hay datos inventados):**
+- **EC-04: no cumple, 0/20.** Con el arnés validado por el control, sin red la app queda en `MapasError` y no existe banner "Offline". Causa en código: `LoadBuildingUseCase` consulta la API antes que la caché y solo se cachea el `.glb`, no los datos del edificio. Corrección pendiente (fuera del alcance de S9 acordado).
+- **EC-02: parcial.** 2398 fotogramas en 60 s, 100 % ≤ 33,3 ms, p95 = 11,0 ms, máx. 31,8 ms. **No demuestra EC-02**: es un repintado sintético del placeholder (rotación continua) porque el frontend no tiene renderizador 3D (`map_page.dart`, TODO), y no se midió el cambio de piso ≤ 500 ms.
+- **EC-01** sigue sin medición válida hasta que exista el `.glb` en Supabase Storage.
+
+**Rechazo con motivo técnico:** no se reportó el "100 % ≤ 33,3 ms" como cumplimiento de EC-02 ni se afinó la prueba hasta que "pasara" EC-04; ambas habrían producido evidencia que no corresponde al comportamiento real del producto.

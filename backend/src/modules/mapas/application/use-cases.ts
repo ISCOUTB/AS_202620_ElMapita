@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { UseCase } from '../../../shared/kernel';
 import type {
   Building,
@@ -37,7 +37,7 @@ export class GetBuildingUseCase implements UseCase<
   async execute(input: GetBuildingInput): Promise<GetBuildingOutput> {
     const building = await this.buildingRepository.findById(input.buildingId);
     if (!building) {
-      throw new Error('Building not found');
+      throw new NotFoundException('Building not found');
     }
 
     const floors = await this.floorRepository.findByBuildingId(
@@ -96,7 +96,7 @@ export class GetFloorModelUseCase implements UseCase<
   async execute(input: GetFloorModelInput): Promise<GetFloorModelOutput> {
     const floor = await this.floorRepository.findById(input.floorId);
     if (!floor) {
-      throw new Error('Floor not found');
+      throw new NotFoundException('Floor not found');
     }
 
     const model3DUrl = await this.modelStorage.getSignedUrl(

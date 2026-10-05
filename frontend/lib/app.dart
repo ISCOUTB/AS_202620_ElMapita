@@ -12,6 +12,7 @@ import 'l10n/app_localizations.dart';
 import 'features/mapas/presentation/bloc/mapas_bloc.dart';
 import 'features/ubicacion/presentation/bloc/ubicacion_bloc.dart';
 import 'features/mapas/presentation/pages/map_page.dart';
+import 'features/mapas/presentation/pages/model_test_page.dart';
 import 'features/ubicacion/presentation/pages/location_page.dart';
 import 'features/campus/presentation/pages/campus_home_page.dart';
 
@@ -34,6 +35,10 @@ final _router = GoRouter(
           },
         ),
       ],
+    ),
+    GoRoute(
+      path: '/modelo-prueba',
+      builder: (context, state) => const ModelTestPage(),
     ),
     GoRoute(
       path: '/location',
