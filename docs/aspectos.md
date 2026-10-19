@@ -41,3 +41,7 @@ El backend que sirve estas 17 operaciones está desplegado como contenedor Docke
 - **Health check honesto:** `GET /health` responde 503 real si Supabase es inaccesible (antes siempre 200)
 - **Métrica ligada a EC-01:** `GET /metrics` — histograma `http_request_duration_seconds` para `GET /api/v1/map/buildings/{buildingId}` y `GET /api/v1/map/floors/{floorId}/model`
 - **Riesgo:** RSK-05 — cold start del plan free de Render puede violar el p95 de EC-01 en la primera petición tras inactividad (ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
+
+## Decisión de extracción S11
+
+La evaluación de extraer módulos del monolito y la alternativa explícita de no extraer están registradas en [ADR-0008](adr/0008-decision-extraccion.md). La decisión actual es mantener el monolito modular hasta que existan métricas de escalado, disponibilidad o despliegue independiente que justifiquen el costo operativo de separar servicios.
