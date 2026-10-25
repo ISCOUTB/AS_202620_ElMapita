@@ -76,6 +76,39 @@ class LocalStorage {
   }
 
   String? getCachedModelVersion(String buildingId) {
-    return getString('model_${buildingId}_version');
+    return getString('model__version');
+  }
+
+  /// Versiones en caché de un edificio -> ruta local del .glb.
+  /// El id de edificio es un UUID (sin '_'), por lo que el prefijo no es ambiguo.
+  Map<String, String> getCachedModelsOf(String buildingId) {
+    final prefix = 'model__';
+    final result = <String, String>{};
+    for (final key in _box.keys) {
+      if (key is String && key.startsWith(prefix)) {
+        result[key.substring(prefix.length)] = _box.get(key) as String;
+      }
+    }
+    return result;
+  }
+
+  /// Ids de edificio que tienen algún modelo en caché.
+  Set<String> getCachedBuildingIds() {
+    final ids = <String>{};
+    for (final key in _box.keys) {
+      if (key is String && key.startsWith('model_')) {
+        final rest = key.substring('model_'.length);
+        final cut = rest.indexOf('_');
+        if (cut > 0) ids.add(rest.substring(0, cut));
+      }
+    }
+    return ids;
+  }
+
+  Future<void> removeCachedModel(String buildingId, String version) async {
+    await delete('model__');
+    if (getCachedModelVersion(buildingId) == version) {
+      await _prefs.remove('model__version');
+    }
   }
 }
