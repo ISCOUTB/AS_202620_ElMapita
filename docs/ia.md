@@ -510,3 +510,39 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 ### Fuentes
 
 `docs/` · lecture "SA_Lecture - Data Intensive" · `backend/src/modules/*` · `frontend/lib/features/mapas/infrastructure/storage/model_cache.dart`
+
+### Seguimiento S10 — cambios realizados el 2026-10-25
+
+Rama `s10/datos-intensivos-cache`, tres commits (sin push ni PR):
+
+| Commit | Contenido |
+|---|---|
+| `1016dd5` | Backend: `CachePort`, `InMemoryTtlCache` (TTL + LRU de 500), `getOrLoad`, métricas `cache_requests_total` y `cache_invalidations_total`; caché en casos de uso de mapas y POIs; `CreatePoi` invalida `pois:floor:*` y `pois:id:*`; `assertQueryOk` (fallo de BD = 503, no vacío); `GetPoi` responde 404. 29 tests en verde. |
+| `b97dc08` | Frontend: `ModelCache` desaloja versiones anteriores del `.glb` tras una descarga exitosa, `clearModelCache` y `clearAllCache` reales, métodos de listado/borrado en `LocalStorage`; test `model_cache_eviction_test.dart` (3 casos). |
+| `248bb7b` | Docs: `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md`, filas nuevas en `README.md`, entrada S10 en esta bitácora; `uploadModel` con `upsert: false`. |
+
+---
+
+## Pendientes y límites de S10 (para retomar)
+
+### Pendientes
+
+| # | Pendiente | Quién / requisito |
+|---|---|---|
+| 1 | Exportar el esquema de Supabase a `backend/supabase/schema.sql` (`supabase db dump --schema public`) y versionarlo; el ADR-0008 lo declara como acción derivada | Responsable del proyecto Supabase (requiere credenciales) |
+| 2 | Caché de metadatos en la app (edificio, pisos, POIs) para que `LoadBuildingUseCase` use la caché sin red; hoy EC-04 sigue en 0/20 | Frontend |
+| 3 | Idempotencia de `POST /api/v1/pois` (llave de idempotencia o ID generado por el cliente); hoy un reintento duplica el POI | Backend; se enlaza con el taller de mensajería |
+| 4 | Taller de mensajería asíncrona (contrato, idempotencia, reintentos/DLQ, pruebas, trazas, ADR async vs sync): quedó fuera de este entregable | Equipo |
+| 5 | Guard de rol en `POST /api/v1/pois` (es "admin" solo en Swagger) | Backend |
+| 6 | Sincronizar o eliminar los arrays desnormalizados `edificios.pisos` y `pisos.pois` | Backend / BD |
+| 7 | `GetFloorModel` firma la ruta con `edificioId` (modelo por edificio, no por piso) | Backend |
+| 8 | Abrir PR de `s10/datos-intensivos-cache` hacia `main` y, si se despliega, verificar `/metrics` en Render | Equipo |
+
+### Límites conocidos
+
+- `npm run test:e2e` falla antes y después de estos cambios: sin variables de Supabase no arranca, y con valores ficticios espera `GET /` = 200 y recibe 404.
+- `backend/test/contract/openapi.contract-spec.ts` ya tenía errores de tipos con `PoiId`/`FloorId` (no introducidos aquí).
+- No se probó contra un Supabase real; los tests usan fakes en memoria.
+- La caché del servidor es local: se pierde en cada reinicio (cold start del plan free) y no se comparte entre instancias; con más de una instancia se pierde el read-your-writes (condición de cambio a Redis en `diseno-cache.md`).
+- La caché devuelve la misma referencia de objeto a todos los llamadores; los casos de uso no deben mutar lo recibido.
+- Los datos de mapas editados a mano en Supabase se ven con retraso de hasta 10 min (POIs: 5 min).
