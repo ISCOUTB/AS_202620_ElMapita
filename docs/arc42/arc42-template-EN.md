@@ -658,6 +658,25 @@ Utilidad de El Mapita UTB
 | **RSK-03** | Dependencia del servicio gestionado Supabase (límites de cuota o indisponibilidad externa). | Medio | Caché local robusta en clientes móviles y abstracción de repositorios para permitir migración transparente. |
 | **RSK-04** | ~~Deriva de contrato: el backend exponía sus rutas con prefijo duplicado (`/api/api/v1/...` en vez de `/api/v1/...`; `/api/health` en vez de `/health`).~~ **Cerrado.** Detectado por la prueba de contrato (ADR-0003) al implementarla; corregido en el mismo ADR quitando el prefijo redundante de los 4 controladores y excluyendo `health` del prefijo global. `npm run openapi:drift` reporta 0 rutas en deriva; los pasos de CI ya no necesitan `continue-on-error`. Al corregirlo se descubrió y cerró un segundo bug (inyección de dependencias rota en 14 casos de uso) que RSK-04 mantenía invisible. | Alto (bloqueaba toda la integración FE-BE en un entorno real) | `docs/api/openapi.v1.yaml` fija la ruta correcta; `npm run openapi:drift` y `npm run test:contracts` verifican en cada corrida de CI. Ver `docs/adr/0003-contrato-openapi-versionado.md` sección "Cierre de RSK-04" y `correcciones.md`. |
 | **RSK-05** | Cold start del plan free de Render: el servicio se duerme tras ~15 min de inactividad; la primera petición tras dormir tarda decenas de segundos — puede violar el p95 de 5 s de **EC-01** en la primera carga tras inactividad. Es el mismo concepto "arranque en frío vs. p95" de la S08, aplicado al backend completo. | Medio (afecta solo la primera petición tras inactividad; no aplica bajo tráfico sostenido) | Medir el p95 real en producción; si lo excede, subir a Render Starter ($7/mes, sin cold start — ver tabla de costos en ADR-0004). No se implementa keep-alive artificial: ocultaría el problema en vez de resolverlo. |
+| **RSK-06** | Fallos parciales de servicios externos o de conectividad: Supabase, Storage, Render o la red móvil pueden fallar de forma independiente. | Alto para la función afectada; el usuario podría no cargar mapas, modelos o datos actualizados. | `GET /health`, códigos HTTP diferenciados, logs, métricas y pruebas de conectividad. | Caché local, respuestas 404/503 diferenciadas, reintentos controlados, banner de estado offline y repositorios desacoplados. Los fallos y su mitigación se detallan en la tabla de modos de fallo de esta sección. |
+| **RSK-07** | Extracción prematura de módulos: separar mapas, ubicación, auth o POIs introduciría comunicación distribuida sin una necesidad actual de escalado independiente. | Medio/Alto: más puntos de fallo, despliegues y carga operativa para el equipo. | Revisión de métricas de carga, frecuencia de despliegue, disponibilidad y estabilidad de contratos. | Mantener el monolito modular. La extracción se revisa solo si se cumple alguno de los criterios del [ADR-0008](../adr/0008-decision-extraccion.md). |
+
+### 11.1 Modos de fallo y mitigaciones
+
+| Modo de fallo | Causa | Impacto | Detección | Mitigación |
+|---|---|---|---|---|
+| Supabase no disponible | Caída externa, cuota o error de red | No se consultan datos remotos | `GET /health`, logs y métricas | Caché local, estado degradado y reintentos controlados |
+| Modelo 3D inexistente | Falta el objeto `.glb` en Storage | No se visualiza el piso solicitado | Respuesta HTTP 404 y logs | Informar el error sin bloquear otros edificios o pisos |
+| Ubicación imprecisa | `accuracy > 15 m`, valor inválido o permiso denegado | Se mostraría una posición engañosa | Validador de precisión y estado de permisos | Rechazar la lectura y ofrecer fallback manual |
+| Cold start de Render | El servicio gratuito queda inactivo | Primera petición lenta y posible incumplimiento de EC-01 | Histograma de latencia y health check | Medir p95 y valorar plan Starter si el umbral se incumple |
+| Sin conectividad móvil | Red ausente o intermitente | No se actualizan datos remotos | Excepción de red y estado del cliente | Usar caché válida, mostrar estado offline y no bloquear la orientación básica |
+| Deriva del contrato FE-BE | Ruta o esquema incompatible | El frontend no puede consumir la API | Lint, deriva y prueba de contrato OpenAPI | Contrato versionado y CI bloqueante |
+
+### 11.2 Idempotencia y coordinación distribuida
+
+Las lecturas de mapas, pisos, modelos, POIs y ubicación son idempotentes: repetirlas no debe cambiar el estado del sistema. No se requiere una saga porque el MVP no coordina transacciones distribuidas entre servicios independientes. Si se habilitan escrituras de POIs u otros recursos, se deberán usar identificadores únicos, validación de estado e idempotency keys para que un reintento no cree duplicados.
+
+La decisión de no extraer módulos y los criterios para revisarla están registrados en el [ADR-0008](../adr/0008-decision-extraccion.md).
 
 ---
 

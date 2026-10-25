@@ -470,7 +470,85 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 
 ---
 
-## S10 — 2026-10-25 — Arquitecturas intensivas en datos: consistencia, caché y ADR-0008
+## Corte 2 — 2026-10-19 — Evidencia del reto aplicado sobre el MVP
+
+**Herramienta:** Codex. **Responsable:** equipo El Mapita UTB.
+
+### Instrucciones del día (resumen)
+
+1. Preparar la guía de evidencia del segundo corte con únicamente cuatro partes: hipótesis, decisión, ejecución y resultado.
+2. Mantener un estilo formal y sencillo inspirado en el documento del corte 1, sin copiar su contenido.
+3. Entregar una versión editable en Word y una versión final en PDF de dos páginas.
+4. No crear todavía el commit ni la etiqueta de entrega.
+
+### Artefactos y resultados
+
+- Se creó `docs/cortes/corte-2.pdf` con las cuatro secciones solicitadas.
+- Se creó `docs/cortes/corte-2.docx` como versión editable.
+- El PDF se verificó con dos páginas y se ajustó la distribución para evitar saltos manuales innecesarios.
+- Se corrigió la sangría de las listas de ejecución y se eliminó la línea divisoria del título en el documento Word.
+- El contenido reporta los resultados reales: EC-03 validado en backend; EC-01 no válido por respuestas HTTP 500; EC-02 parcial por usar un placeholder; y EC-04 no cumplido.
+
+### Decisiones y límites
+
+- No se añadió la URL pública al PDF porque quedó fuera del alcance indicado para esta preparación.
+- No se inventaron resultados ni se declaró cumplimiento de escenarios que la evidencia no demuestra.
+- El archivo temporal `docs/cortes/~$orte-2.docx` no se incluyó como evidencia.
+- El commit y la etiqueta `corte-2` quedaron pendientes de autorización explícita del equipo.
+
+### Fuentes
+
+`docs/cortes/corte-2.pdf` · `docs/cortes/corte-2.docx` · `docs/aspectos.md` · `docs/evidencia/s9-ec01-benchmark.json` · `docs/evidencia/s9-ec02-fotogramas-dispositivo.txt` · `docs/evidencia/s9-ec04-offline-dispositivo.txt`
+
+---
+
+## S11 — 2026-10-19 — Fallos parciales y decisión de extracción
+
+**Herramienta:** Codex. **Responsable:** equipo El Mapita UTB.
+
+### Instrucciones del día (resumen)
+
+1. Actualizar arc42 sección 11 con los modos de fallo identificados y sus mitigaciones.
+2. Analizar si el sistema requiere idempotencia o una saga.
+3. Crear un ADR que evalúe explícitamente extraer módulos o mantener el monolito modular.
+4. Definir criterios verificables para cambiar la decisión en el futuro.
+5. Mantener la trazabilidad entre arc42, aspectos y ADR.
+
+### Qué se aceptó
+
+- Se aceptó evaluar como alternativas la extracción de `mapas`, `ubicacion`, `auth` o `pois`, y la opción de no extraer.
+- Se aceptó mantener el monolito modular porque el equipo es pequeño, el despliegue es único y no existe una necesidad demostrada de escalado o disponibilidad independiente.
+- Se aceptó que las lecturas actuales son idempotentes y que no se requiere una saga mientras no existan transacciones distribuidas entre servicios.
+
+### Artefactos generados o modificados
+
+| Artefacto | Acción |
+|---|---|
+| `docs/adr/0008-decision-extraccion.md` | Creado con alternativas, criterios, decisión, consecuencias e idempotencia/sagas. |
+| `docs/arc42/arc42-template-EN.md` | Sección 11 ampliada con RSK-06, RSK-07, tabla de fallos y análisis de coordinación distribuida. |
+| `docs/aspectos.md` | Enlace de trazabilidad hacia ADR-0008 y sus criterios de extracción. |
+
+### Decisión y consecuencias
+
+La decisión es **no extraer por ahora**. La extracción solo se reabrirá si un módulo necesita escalar de manera independiente, requiere un ciclo de despliegue distinto, tiene un contrato estable sin compartir el modelo interno y el beneficio supera el costo operativo. La consecuencia positiva es conservar una operación sencilla; la negativa es que los módulos comparten el proceso y el despliegue del backend.
+
+### Límites conocidos
+
+- La mitigación offline está documentada como objetivo, pero EC-04 todavía no cumple en la implementación actual.
+- Las operaciones de escritura futuras deberán agregar identificadores únicos o idempotency keys para evitar duplicados por reintentos.
+- No se implementó una saga porque no existe actualmente un flujo distribuido que requiera compensación.
+
+### Verificación
+
+`git diff --check` no reportó errores de formato en los cambios documentales. No se realizó commit, push ni creación de etiqueta durante esta sesión.
+
+### Fuentes
+
+`docs/adr/0008-decision-extraccion.md` · `docs/arc42/arc42-template-EN.md` sección 11 · `docs/aspectos.md` · `docs/evidencia/s9-ec04-offline-dispositivo.txt` · `docs/evidencia/s9-ec01-benchmark.json`
+
+---
+
+## S10 — 2026-10-25 — Arquitecturas intensivas en datos: consistencia, caché y ADR-0010
 
 **Herramienta:** Claude Code (Claude Opus 5.5 en planificación, Claude Sonnet 5.5 en implementación). **Responsable:** Angel Fabian Gutierrez Gomez.
 
@@ -484,7 +562,7 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 - `backend/src/shared/cache/` (puerto `CachePort`, `InMemoryTtlCache` con TTL y LRU, `getOrLoad`, métricas Prometheus) y su uso en los casos de uso de mapas y POIs; `CreatePoi` invalida `pois:floor:*` y `pois:id:*`.
 - `shared/supabase/query-result.ts`: un fallo real de BD ahora es 503 y no se confunde con "no encontrado"/lista vacía.
 - Frontend: desalojo de versiones viejas del `.glb` y `clearModelCache`/`clearAllCache` reales, con test.
-- `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md`.
+- `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0010-postgresql-postgis-fuente-de-verdad.md`.
 
 ### Qué se corrigió
 
@@ -497,7 +575,7 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 
 - **No se añadió Redis:** hay una sola instancia (Render plan free); sería un servicio y un punto de falla sin beneficio. Queda la condición de cambio en `diseno-cache.md`.
 - **No se usó write-through ni write-back:** el primero arriesga orden inverso entre escrituras concurrentes; el segundo pierde escrituras confirmadas si el proceso se reinicia.
-- **No se afirma que el esquema esté versionado:** no hay `.sql` en el repo; el ADR-0008 lo declara como acción pendiente (`supabase db dump`, requiere credenciales del responsable).
+- **No se afirma que el esquema esté versionado:** no hay `.sql` en el repo; el ADR-0010 lo declara como acción pendiente (`supabase db dump`, requiere credenciales del responsable).
 
 ### Límites conocidos
 
@@ -519,7 +597,7 @@ Rama `s10/datos-intensivos-cache`, tres commits (sin push ni PR):
 |---|---|
 | `1016dd5` | Backend: `CachePort`, `InMemoryTtlCache` (TTL + LRU de 500), `getOrLoad`, métricas `cache_requests_total` y `cache_invalidations_total`; caché en casos de uso de mapas y POIs; `CreatePoi` invalida `pois:floor:*` y `pois:id:*`; `assertQueryOk` (fallo de BD = 503, no vacío); `GetPoi` responde 404. 29 tests en verde. |
 | `b97dc08` | Frontend: `ModelCache` desaloja versiones anteriores del `.glb` tras una descarga exitosa, `clearModelCache` y `clearAllCache` reales, métodos de listado/borrado en `LocalStorage`; test `model_cache_eviction_test.dart` (3 casos). |
-| `248bb7b` | Docs: `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md`, filas nuevas en `README.md`, entrada S10 en esta bitácora; `uploadModel` con `upsert: false`. |
+| `248bb7b` | Docs: `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0010-postgresql-postgis-fuente-de-verdad.md`, filas nuevas en `README.md`, entrada S10 en esta bitácora; `uploadModel` con `upsert: false`. |
 
 ---
 
@@ -529,7 +607,7 @@ Rama `s10/datos-intensivos-cache`, tres commits (sin push ni PR):
 
 | # | Pendiente | Quién / requisito |
 |---|---|---|
-| 1 | Exportar el esquema de Supabase a `backend/supabase/schema.sql` (`supabase db dump --schema public`) y versionarlo; el ADR-0008 lo declara como acción derivada | Responsable del proyecto Supabase (requiere credenciales) |
+| 1 | Exportar el esquema de Supabase a `backend/supabase/schema.sql` (`supabase db dump --schema public`) y versionarlo; el ADR-0010 lo declara como acción derivada | Responsable del proyecto Supabase (requiere credenciales) |
 | 2 | Caché de metadatos en la app (edificio, pisos, POIs) para que `LoadBuildingUseCase` use la caché sin red; hoy EC-04 sigue en 0/20 | Frontend |
 | 3 | Idempotencia de `POST /api/v1/pois` (llave de idempotencia o ID generado por el cliente); hoy un reintento duplica el POI | Backend; se enlaza con el taller de mensajería |
 | 4 | Taller de mensajería asíncrona (contrato, idempotencia, reintentos/DLQ, pruebas, trazas, ADR async vs sync): quedó fuera de este entregable | Equipo |
@@ -647,3 +725,32 @@ El pendiente 4 de la sección "Pendientes y límites de S10" (taller de mensajer
 | 9 | Confirmar (commit) y subir (push) los cambios de la reconciliación | Abierto: lo hace el responsable |
 | 10 | `test:e2e` roto antes y después de estos cambios (espera `GET /` = 200) y errores de tipos preexistentes en `openapi.contract-spec.ts` | Abierto, sin relación con S10 |
 | 11 | Probar la reconciliación y la caché contra un Supabase real y verificar `/metrics` en Render | Abierto |
+
+---
+
+## S10 — 2026-10-25 — Integración con `origin/main` (merge) y renumeración de un ADR
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez. **Sin commit:** el merge quedó preparado y sin confirmar para que el responsable lo confirme y haga el push.
+
+### Qué pasó
+
+- Se olvidó un `git pull`. Un `git fetch` mostró 3 commits nuevos en `origin/main` (merge del PR #2 de S9, evidencia del corte 2 y de S11, y `docs/adr/0008-decision-extraccion.md`).
+- Un merge de prueba (`git merge-tree`) predijo un único conflicto: `docs/ia.md`, porque ambos lados solo agregaban secciones.
+
+### Qué se hizo
+
+- `git merge --no-commit --no-ff origin/main` en `s10/taller-mensajeria`.
+- **`docs/ia.md`:** se conservaron ambos lados, sin descartar texto de ninguno. Orden cronológico: primero las entradas de `main` (Corte 2 y S11, 2026-10-19) y después las de S10 (2026-10-25).
+- **Colisión de número de ADR:** `main` ya tenía un ADR-0008 distinto (extracción de módulos). El ADR de PostgreSQL/Supabase pasó de **0008 a 0010** (`docs/adr/0010-postgresql-postgis-fuente-de-verdad.md`, con `number: 0010` y título actualizados). Se actualizaron los enlaces en `README.md`, `docs/datos/consistencia-operaciones.md` y las entradas S10 de este archivo.
+- Se eligió 0010 y no 0009 porque el ADR-0009 (mensajería) ya existe y se enlaza desde varios documentos.
+- **No se tocó** el ADR-0008 de `main` ni ninguna referencia a él (arc42, `aspectos.md`, entradas S11).
+
+### Nota para leer el historial de este archivo
+
+Las entradas S10 anteriores a esta hablan del "ADR-0008" cuando se escribieron; en los lugares donde se citaba ese ADR ya se corrigió a ADR-0010. Cualquier "ADR-0008" que quede en una entrada de S11 o Corte 2 se refiere al ADR de extracción de módulos.
+
+### Pendiente derivado
+
+| # | Pendiente | Estado |
+|---|---|---|
+| 12 | Confirmar el merge (`git commit`) y hacer el push; luego abrir el PR de las dos ramas `s10` | Abierto: lo hace el responsable |

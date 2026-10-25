@@ -1,6 +1,6 @@
 # Operación → garantía de consistencia
 
-Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Almacén de verdad: PostgreSQL (Supabase) + Storage (ver [ADR-0008](../adr/0008-postgresql-postgis-fuente-de-verdad.md)). La caché del servidor se describe en [diseno-cache.md](diseno-cache.md).
+Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Almacén de verdad: PostgreSQL (Supabase) + Storage (ver [ADR-0010](../adr/0010-postgresql-postgis-fuente-de-verdad.md)). La caché del servidor se describe en [diseno-cache.md](diseno-cache.md).
 
 **Vocabulario.** *Read committed*: cada consulta ve solo datos confirmados, pero dos consultas seguidas pueden ver estados distintos (no hay snapshot entre ellas). *Obsolescencia acotada*: una lectura puede devolver un dato viejo, pero nunca más viejo que el TTL. *Read-your-writes*: tras escribir, la misma instancia lee lo escrito.
 
@@ -16,7 +16,7 @@ Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Alma
 | 6 | Listar POIs de un piso | `GET /api/v1/pois/floor/:id` · `ListPoisByFloorUseCase` | `pois` + caché | Igual que la fila 5 | Igual que la fila 5. |
 | 7 | **Crear POI** | `POST /api/v1/pois` · `CreatePoiUseCase` → `save` (upsert) | `pois` | **Atómica por fila (ACID de Postgres)**; **no idempotente** | El UUID lo genera el servidor en cada petición: reintentar tras un timeout duplica el POI. No hay llave de idempotencia. Además no actualiza `pisos.pois[]` (array desnormalizado). Sin guard de rol pese a ser "admin" en Swagger. Tras guardar publica `poi.created.v1` (al-menos-una-vez, no duradero; ver [ADR-0009](../adr/0009-mensajeria-asincrona-simulador-en-memoria.md)). |
 | 8 | Subir modelo 3D | `SupabaseModel3DStorage.uploadModel` (sin endpoint) | Storage | `upsert: false` (cambiado en esta entrega; antes `true`): **no sobrescribe** una versión publicada | Preserva la inmutabilidad por versión: subir de nuevo la misma versión falla en vez de dejar a los clientes con la v1 en caché sin ver el cambio. Para cambiar un modelo hay que publicar una versión nueva. |
-| 9 | Auth: sign-in / sign-up / refresh / sign-out | `AuthController` → Supabase Auth | `auth.users` | **Fuerte**, delegada a Supabase Auth. **Nunca se cachea** | Dependencia total de un tercero (ver ADR-0008). |
+| 9 | Auth: sign-in / sign-up / refresh / sign-out | `AuthController` → Supabase Auth | `auth.users` | **Fuerte**, delegada a Supabase Auth. **Nunca se cachea** | Dependencia total de un tercero (ver ADR-0010). |
 | 10 | Cambiar rol de usuario | `POST /api/v1/auth/users/:id/role` | `auth.users.user_metadata` | Fuerte en el servidor; **eventual en el cliente** hasta que se refresque el JWT | Un rol revocado sigue vigente hasta que expire el token vigente. |
 | 11 | Ubicación actual / manual | `GET /location/current`, `POST /location/manual` | Ninguno | No aplica (sin persistencia) | `manual` solo devuelve lo recibido. |
 | 12 | Caché local del `.glb` (app) | `ModelCache`, `LocalStorage` | Disco + Hive | **Inmutable por versión**; sin TTL; la versión anterior se borra al bajar la nueva | Si la descarga de la versión nueva falla, se conserva la anterior (uso sin red). |

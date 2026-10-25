@@ -1,5 +1,5 @@
 ---
-number: 0008
+number: 0010
 date: 2026-10-25
 title: "PostgreSQL (Supabase) como fuente de verdad relacional de El Mapita UTB"
 status: Accepted
@@ -7,7 +7,7 @@ deciders: ["Diego Rosales Garza", "Rodrigo Vazquez Rico", "Angel Fabian Gutierre
 technical-story: "Entrega de arquitecturas intensivas en datos: documentar la decisión de datos más costosa de revertir. La decisión se tomó al iniciar el proyecto sin ADR; este lo registra con sus consecuencias reales."
 ---
 
-# ADR-0008: PostgreSQL (Supabase) como fuente de verdad relacional
+# ADR-0010: PostgreSQL (Supabase) como fuente de verdad relacional
 
 ## Contexto
 
