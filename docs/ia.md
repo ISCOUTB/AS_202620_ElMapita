@@ -467,3 +467,46 @@ Con esto se considera cerrada la evidencia de la Semana 8: URL pública alcanzab
 - **EC-01** sigue sin medición válida hasta que exista el `.glb` en Supabase Storage.
 
 **Rechazo con motivo técnico:** no se reportó el "100 % ≤ 33,3 ms" como cumplimiento de EC-02 ni se afinó la prueba hasta que "pasara" EC-04; ambas habrían producido evidencia que no corresponde al comportamiento real del producto.
+
+---
+
+## S10 — 2026-10-25 — Arquitecturas intensivas en datos: consistencia, caché y ADR-0008
+
+**Herramienta:** Claude Code (Claude Opus 5.5 en planificación, Claude Sonnet 5.5 en implementación). **Responsable:** Angel Fabian Gutierrez Gomez.
+
+### Prompts usados (resumidos)
+
+1. Plan para la entrega "tabla operación→garantía de consistencia, diseño de caché con invalidación y ADR de la decisión de datos más costosa de revertir", con la lecture *Data Intensive* como base. El usuario pegó además el enunciado de un taller de mensajería asíncrona.
+2. Decisión de alcance: se centró el plan en datos intensivos; el taller de mensajería se tratará aparte. Caché con diseño **e** implementación.
+
+### Qué se aceptó
+
+- `backend/src/shared/cache/` (puerto `CachePort`, `InMemoryTtlCache` con TTL y LRU, `getOrLoad`, métricas Prometheus) y su uso en los casos de uso de mapas y POIs; `CreatePoi` invalida `pois:floor:*` y `pois:id:*`.
+- `shared/supabase/query-result.ts`: un fallo real de BD ahora es 503 y no se confunde con "no encontrado"/lista vacía.
+- Frontend: desalojo de versiones viejas del `.glb` y `clearModelCache`/`clearAllCache` reales, con test.
+- `docs/datos/consistencia-operaciones.md`, `docs/datos/diseno-cache.md`, `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md`.
+
+### Qué se corrigió
+
+- Antes de cachear se detectó que los repositorios devolvían `null`/`[]` ante cualquier error; cachear eso habría fijado un fallo transitorio como "vacío" durante el TTL. Se corrigió primero (paso previo del plan).
+- `GetPoiUseCase` lanzaba `Error` genérico (500); ahora `NotFoundException` (404).
+- `uploadModel` pasó de `upsert: true` a `false` para mantener los modelos inmutables por versión (el endpoint no existe aún, no hay cambio de contrato).
+- Defectos propios durante el trabajo: un `prettier --write src` reformateó archivos ajenos (se revirtieron antes de confirmar) y el test del frontend usaba un `Dio` sin `responseType: bytes`.
+
+### Rechazos con motivo técnico
+
+- **No se añadió Redis:** hay una sola instancia (Render plan free); sería un servicio y un punto de falla sin beneficio. Queda la condición de cambio en `diseno-cache.md`.
+- **No se usó write-through ni write-back:** el primero arriesga orden inverso entre escrituras concurrentes; el segundo pierde escrituras confirmadas si el proceso se reinicia.
+- **No se afirma que el esquema esté versionado:** no hay `.sql` en el repo; el ADR-0008 lo declara como acción pendiente (`supabase db dump`, requiere credenciales del responsable).
+
+### Límites conocidos
+
+- `npm run test:e2e` falla antes y después del cambio: sin variables de entorno Supabase no arranca, y con valores ficticios espera `GET /` = 200 y recibe 404. No se tocó.
+- `test/contract/openapi.contract-spec.ts` ya tenía errores de tipos con `PoiId`/`FloorId` (no introducidos aquí).
+- El taller de mensajería (idempotencia, DLQ) queda fuera; la fila 7 de la tabla de consistencia documenta que `CreatePoi` no es idempotente.
+- EC-04 sigue sin cumplirse: no hay caché de metadatos en la app.
+- No se probó en un Supabase real; los tests usan fakes en memoria.
+
+### Fuentes
+
+`docs/` · lecture "SA_Lecture - Data Intensive" · `backend/src/modules/*` · `frontend/lib/features/mapas/infrastructure/storage/model_cache.dart`

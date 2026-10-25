@@ -86,6 +86,9 @@ frontend/lib/
 | **C4 Nivel 1: Contexto** | `docs/c4/C4_L1_Context.png` ([Mermaid](../docs/c4/C4_L1_Context.md)) | Diagrama de contexto del sistema (actores + Supabase + SO Location) |
 | **C4 Nivel 2: Contenedor** | `docs/c4/C4_L2_Container.png` ([Mermaid](../docs/c4/C4_L2_Container.md)) | Desglose en App Flutter, API NestJS, Supabase (Auth/DB/Storage/Realtime), caché Hive/Filesystem |
 | **Escenarios de Calidad (EC-01 a EC-04)** | `docs/arc42/arc42-template-EN.md#section-quality-scenarios` | Rendimiento, fluidez, ubicación, disponibilidad |
+| **Operación → consistencia** | `docs/datos/consistencia-operaciones.md` | Garantía de consistencia de cada operación de lectura/escritura y sus riesgos |
+| **Diseño de caché** | `docs/datos/diseno-cache.md` | Caché de servidor y cliente: claves, TTL y política de invalidación |
+| **ADR-0008: Fuente de verdad de datos** | `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md` | PostgreSQL/Supabase: alternativas y por qué es la decisión más costosa de revertir |
 
 ---
 

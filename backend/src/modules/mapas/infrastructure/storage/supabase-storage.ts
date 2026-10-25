@@ -43,7 +43,7 @@ export class SupabaseModel3DStorage implements Model3DStorage {
       .from(this.BUCKET)
       .upload(path, file, {
         contentType: 'model/gltf-binary',
-        upsert: true,
+        upsert: false, // inmutable por versión: no se sobrescribe un .glb ya publicado
       });
 
     if (error || !data) {
