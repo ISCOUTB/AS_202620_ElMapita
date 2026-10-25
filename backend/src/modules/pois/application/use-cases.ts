@@ -1,7 +1,13 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { UseCase } from '../../../shared/kernel';
 import { CACHE_PORT, type CachePort } from '../../../shared/cache/cache.port';
 import { getOrLoad } from '../../../shared/cache/get-or-load';
+import {
+  MESSAGE_BUS,
+  type MessageBus,
+} from '../../../shared/messaging/message-bus.port';
+import { newMessage } from '../../../shared/messaging/message';
+import { POI_CREATED_V1, type PoiCreatedV1 } from './poi-events';
 import type {
   Poi,
   PoiId,
@@ -87,7 +93,11 @@ export class CreatePoiUseCase implements UseCase<
   constructor(
     @Inject('PoiRepository') private readonly poiRepository: PoiRepository,
     @Inject(CACHE_PORT) private readonly cache: CachePort,
+    @Inject(MESSAGE_BUS) private readonly bus: MessageBus,
   ) {}
+
+  private readonly logger = new Logger(CreatePoiUseCase.name);
+
   async execute(input: CreatePoiInput): Promise<CreatePoiOutput> {
     const poi: Poi = {
       id: crypto.randomUUID() as PoiId,
@@ -99,6 +109,28 @@ export class CreatePoiUseCase implements UseCase<
     // Invalidación explícita tras escribir (read-your-writes): se borra, no se actualiza.
     await this.cache.del(`pois:floor:${saved.pisoId}`);
     await this.cache.del(`pois:id:${saved.id}`);
+    await this.publishCreated(saved);
     return { poi: saved };
+  }
+
+  /**
+   * Publicar es posterior al guardado y no forma parte de la transacción:
+   * si el proceso muere entre ambos, el evento se pierde (ADR-0009, se
+   * mitigaría con un outbox). Un fallo al publicar no debe fallar la petición.
+   */
+  private async publishCreated(poi: Poi): Promise<void> {
+    const payload: PoiCreatedV1 = {
+      poiId: poi.id,
+      pisoId: poi.pisoId,
+      tipo: poi.tipo,
+      nombre: poi.nombre,
+    };
+    try {
+      await this.bus.publish(newMessage(POI_CREATED_V1, payload));
+    } catch (e) {
+      this.logger.error(
+        `No se pudo publicar ${POI_CREATED_V1} (poiId=${poi.id}): ${String(e)}`,
+      );
+    }
   }
 }

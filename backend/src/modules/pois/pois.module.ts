@@ -6,6 +6,7 @@ import {
   ListPoisByFloorUseCase,
   CreatePoiUseCase,
 } from './application/use-cases';
+import { PoiAuditConsumer } from './application/poi-audit.consumer';
 import { SupabasePoiRepository } from './infrastructure/supabase-poi-repository';
 
 @Module({
@@ -15,6 +16,7 @@ import { SupabasePoiRepository } from './infrastructure/supabase-poi-repository'
     GetPoiUseCase,
     ListPoisByFloorUseCase,
     CreatePoiUseCase,
+    PoiAuditConsumer,
     {
       provide: 'PoiRepository',
       useClass: SupabasePoiRepository,

@@ -5,6 +5,7 @@ import {
   ListPoisByFloorUseCase,
 } from './use-cases';
 import { InMemoryTtlCache } from '../../../shared/cache/in-memory-ttl-cache';
+import { InMemoryMessageBus } from '../../../shared/messaging/in-memory-message-bus';
 import type {
   FloorId,
   GeoPoint,
@@ -63,7 +64,11 @@ describe('POIs con caché', () => {
     const { asRepo } = fakeRepo();
     const cache = new InMemoryTtlCache();
     const list = new ListPoisByFloorUseCase(asRepo, cache);
-    const create = new CreatePoiUseCase(asRepo, cache);
+    const create = new CreatePoiUseCase(
+      asRepo,
+      cache,
+      new InMemoryMessageBus(),
+    );
 
     expect((await list.execute({ floorId: pisoId })).pois).toHaveLength(0);
     await create.execute(input);

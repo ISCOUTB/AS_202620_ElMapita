@@ -546,3 +546,50 @@ Rama `s10/datos-intensivos-cache`, tres commits (sin push ni PR):
 - La caché del servidor es local: se pierde en cada reinicio (cold start del plan free) y no se comparte entre instancias; con más de una instancia se pierde el read-your-writes (condición de cambio a Redis en `diseno-cache.md`).
 - La caché devuelve la misma referencia de objeto a todos los llamadores; los casos de uso no deben mutar lo recibido.
 - Los datos de mapas editados a mano en Supabase se ven con retraso de hasta 10 min (POIs: 5 min).
+
+---
+
+## S10 — 2026-10-25 — Taller de mensajería asíncrona (simulador en memoria)
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez. Rama `s10/taller-mensajeria` (parte de `s10/datos-intensivos-cache`).
+
+### Prompts usados (resumidos)
+
+1. "¿Puedes realizar el Taller de mensajería, o no lo ves necesario en este proyecto?" La IA respondió que el producto no lo necesita (backend casi de solo lectura, una instancia) pero que el enunciado sí lo exige y hay un caso real (`CreatePoi` no idempotente).
+2. "Prefiero un simulador" (frente a RabbitMQ real con Docker).
+
+### Qué se aceptó
+
+- `backend/src/shared/messaging/`: sobre `Message`, puerto `MessageBus`, `InMemoryMessageBus` (al-menos-una-vez, deduplicación por `eventId`, backoff exponencial 200/400 ms tope 5 s, 3 intentos, cola de fallidos, `NonRetryableError`), `MessagingModule` con log estructurado por transición y métrica `messages_total`.
+- `poi.created.v1` publicado por `CreatePoi` tras guardar; `PoiAuditConsumer` como consumidor de demostración (en memoria).
+- `docs/mensajeria/contrato-mensajes.md` y `docs/adr/0009-mensajeria-asincrona-simulador-en-memoria.md` (compara con la alternativa síncrona y con un broker real).
+- 20 pruebas nuevas; total del backend 49 en verde y 17 de contrato en verde.
+
+### Qué se corrigió
+
+- La primera versión de una prueba afirmaba que el consumidor no se había ejecutado tras `await publish(...)`; era un defecto de la prueba (el `await` cede el turno y la entrega diferida corre). Se cambió a comprobarlo antes de esperar la promesa.
+- Una plantilla de texto se corrompió por el escape del shell al editar `use-cases.ts` (quedó `this.logger.error(,)`); se detectó antes de compilar y se corrigió a mano.
+- `eslint` marcó un import sin uso en una prueba nueva; se eliminó.
+
+### Rechazos con motivo técnico
+
+- **No se añadió RabbitMQ/Kafka:** una instancia sin presupuesto; el puerto deja el cambio como reimplementación.
+- **No se hizo asíncrona la invalidación de caché:** necesita read-your-writes inmediato; el ADR-0009 lo justifica.
+- **No se implementó la `Idempotency-Key` HTTP de `POST /pois`** que se había propuesto como bonus: exige cambiar el contrato OpenAPI versionado (ADR-0003/0006) y no es parte de lo que pide el taller. Queda como pendiente 3 de la sección de pendientes.
+- **No se declara el sistema "tolerante a reinicios":** cola, pendientes y cola de fallidos son en memoria; el ADR lo asume como consecuencia.
+
+### Límites conocidos
+
+- El único consumidor es de demostración (auditoría en memoria); el valor de negocio llega con un consumidor real.
+- Sin *outbox*: guardar y publicar no son atómicos.
+- La cola de fallidos no es duradera y no tiene herramienta de reproceso.
+- El `correlationId` se genera al publicar; no se propaga desde la petición HTTP.
+- No se ejecutó contra un broker real ni contra Supabase real.
+
+### Pendientes tras este taller
+
+El pendiente 4 de la sección "Pendientes y límites de S10" (taller de mensajería) queda **resuelto**. Siguen abiertos los demás (esquema SQL, caché de metadatos en la app, `Idempotency-Key` HTTP, guard de rol, arrays desnormalizados, firma por piso, PR a `main`).
+
+### Fuentes
+
+`docs/` · enunciado del "Taller de mensajería" pegado por el usuario · `backend/src/shared/messaging/` · `backend/src/modules/pois/application/`

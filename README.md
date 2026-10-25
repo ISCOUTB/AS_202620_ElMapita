@@ -89,6 +89,8 @@ frontend/lib/
 | **Operación → consistencia** | `docs/datos/consistencia-operaciones.md` | Garantía de consistencia de cada operación de lectura/escritura y sus riesgos |
 | **Diseño de caché** | `docs/datos/diseno-cache.md` | Caché de servidor y cliente: claves, TTL y política de invalidación |
 | **ADR-0008: Fuente de verdad de datos** | `docs/adr/0008-postgresql-postgis-fuente-de-verdad.md` | PostgreSQL/Supabase: alternativas y por qué es la decisión más costosa de revertir |
+| **Mensajería asíncrona** | `docs/mensajeria/contrato-mensajes.md` | Contrato del evento, garantía al-menos-una-vez, idempotencia, reintentos/DLQ, pruebas y trazabilidad |
+| **ADR-0009: Mensajería asíncrona** | `docs/adr/0009-mensajeria-asincrona-simulador-en-memoria.md` | Simulador en memoria frente a llamada síncrona y a un broker real |
 
 ---
 
