@@ -145,6 +145,9 @@ class FakePoiRepository implements PoiRepository {
   findByTipo() {
     return Promise.resolve([fakePoi]);
   }
+  findAll() {
+    return Promise.resolve([fakePoi]);
+  }
   save(poi: Poi) {
     return Promise.resolve(poi);
   }

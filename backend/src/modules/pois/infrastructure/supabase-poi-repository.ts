@@ -69,6 +69,28 @@ export class SupabasePoiRepository implements PoiRepository {
     return data.map(this.mapToPoi);
   }
 
+  async findAll(): Promise<Poi[]> {
+    // PostgREST limita cada respuesta (1000 filas por defecto): se pagina con
+    // un orden estable para no perder ni repetir filas.
+    const PAGE = 1000;
+    const rows: PoiRow[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = (await this.client
+        .from('pois')
+        .select('*')
+        .order('id')
+        .range(from, from + PAGE - 1)) as {
+        data: PoiRow[] | null;
+        error: PostgrestError | null;
+      };
+      assertQueryOk(error, 'pois.findAll');
+      if (!data) break;
+      rows.push(...data);
+      if (data.length < PAGE) break;
+    }
+    return rows.map(this.mapToPoi);
+  }
+
   async save(poi: Poi): Promise<Poi> {
     const { data, error } = (await this.client
       .from('pois')

@@ -38,6 +38,8 @@ export interface PoiRepository {
   findById(id: PoiId): Promise<Poi | null>;
   findByFloorId(pisoId: FloorId): Promise<Poi[]>;
   findByTipo(tipo: PoiType): Promise<Poi[]>;
+  /** Todos los POIs (para reconciliar la auditoría con la fuente de verdad). */
+  findAll(): Promise<Poi[]>;
   save(poi: Poi): Promise<Poi>;
 }
 

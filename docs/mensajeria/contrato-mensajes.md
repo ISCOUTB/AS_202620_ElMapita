@@ -46,7 +46,7 @@ El bus puede entregar un mensaje más de una vez (reintentos y redeliveries), nu
 - **Duplicados posibles** → los consumidores deben ser idempotentes (punto 3).
 - **Sin garantía de orden** entre mensajes distintos. Hoy no importa: el único evento es de creación.
 - **Pérdida si el proceso se reinicia:** la cola y los mensajes pendientes viven en memoria.
-- **Escritura doble:** guardar el POI y publicar el evento no son atómicos. Si el proceso muere entre ambos, el POI existe y el evento nunca se publica. Mitigación futura: *outbox* (guardar el evento en la misma transacción). No se implementa.
+- **Escritura doble:** guardar el POI y publicar el evento no son atómicos. Si el proceso muere entre ambos, el POI existe y el evento nunca se publica. Mitigación elegida: la **reconciliación** (sección 7), no un *outbox*; el outbox queda como opción si algún día el evento no puede perderse.
 - **Un fallo al publicar no falla la petición:** el POI ya está guardado; se registra el error.
 
 ## 3. Duplicados: deduplicación por `eventId`
@@ -96,3 +96,25 @@ Cada transición escribe **una línea de log estructurada** con `eventId` y `cor
 Métrica: `messages_total{type, subscription, outcome}` en `/metrics`. Para seguir un mensaje basta filtrar los logs por su `eventId` o `correlationId`: aparecen `msg.published` (productor) y luego `msg.delivered` o `msg.retried`/`msg.dead_lettered` (consumidor).
 
 **Límite:** el `correlationId` se genera al publicar; todavía no se propaga desde la petición HTTP que originó el POI.
+
+## 7. Reconciliación: cierre de la brecha sin outbox
+
+`PoiAuditReconciler` (`modules/pois/application/poi-audit.reconciler.ts`) compara la fuente de verdad (`pois`, vía `PoiRepository.findAll()`) con los POIs que la auditoría ya tiene, y publica `poi.created.v1` solo para los que faltan.
+
+| Pérdida que cubre | Cómo |
+|---|---|
+| El proceso murió entre guardar y publicar | El POI existe en `pois` y no en la auditoría: se republica |
+| Un reinicio vació la auditoría o la cola pendiente (ambas en memoria) | Al arrancar se reconcilia: se reconstruye la auditoría completa |
+| El evento quedó en la cola de fallidos | El POI sigue sin estar auditado: se publica un evento nuevo |
+
+- **Cuándo corre:** al arrancar y luego cada 10 min. No corre con `NODE_ENV=test`. Una falla se registra (`reconcile.failed`) y nunca tumba la aplicación.
+- **Es idempotente:** publicar de más no duplica nada, porque el consumidor es idempotente por `poiId`. Dos corridas seguidas: la segunda no encuentra nada.
+- **Trazabilidad:** cada corrida usa un `correlationId` con la forma `reconcile-<uuid>` y registra `reconcile.done` con `checked`, `missing` y `published`.
+- **Pruebas:** `poi-audit.reconciler.spec.ts` (solo lo que falta, reinicio, idempotencia, cola de fallidos, correlationId, arranque y fallo de BD).
+
+**Límites:**
+
+- **Latencia de recuperación:** una pérdida se corrige en ≤ 10 min (o al reiniciar), no al instante.
+- **Solo cubre la creación:** compara por existencia. Si algún día hubiera eventos de actualización o borrado, habría que comparar contenido (p. ej. `updated_at`).
+- **Costo:** lee todos los POIs (paginado de 1000 en 1000) cada 10 min; razonable con cientos de filas, no con millones.
+- **Con varias instancias** cada una reconcilia su propia auditoría en memoria; el problema real entonces es la auditoría en memoria, no la reconciliación.

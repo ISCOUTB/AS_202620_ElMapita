@@ -593,3 +593,57 @@ El pendiente 4 de la sección "Pendientes y límites de S10" (taller de mensajer
 ### Fuentes
 
 `docs/` · enunciado del "Taller de mensajería" pegado por el usuario · `backend/src/shared/messaging/` · `backend/src/modules/pois/application/`
+
+---
+
+## S10 — 2026-10-25 — Reconciliación de la auditoría de POIs (en lugar de outbox)
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez. Rama `s10/taller-mensajeria`. **Sin commit:** los cambios quedan en el árbol de trabajo para que el responsable los confirme y haga el push.
+
+### Prompts usados (resumidos)
+
+1. "¿Consideras necesaria la implementación de la outbox?" La IA respondió que no (lo perdido es una fila de una auditoría de demostración; un outbox sin broker durable resolvería la mitad del problema y obligaría a versionar una tabla nueva cuando el esquema ni siquiera está versionado) y propuso una reconciliación como alternativa barata.
+2. "Haz la tarea de reconciliación… dame la lista de pendientes, actualiza `ia.md` y evita hacer commits."
+
+### Qué se aceptó
+
+- `PoiRepository.findAll()` (paginado de 1000 en 1000 con orden estable en `SupabasePoiRepository`; fakes de la prueba de contrato actualizados).
+- `PoiAuditReconciler`: compara `pois` con lo auditado y publica `poi.created.v1` solo de lo que falta; corre al arrancar y cada 10 min; no corre con `NODE_ENV=test`; un fallo se registra y no tumba la app; `correlationId` `reconcile-<uuid>` por corrida.
+- Cubre tres pérdidas con un solo mecanismo: muerte entre guardar y publicar, reinicio que vacía la auditoría en memoria, y evento en la cola de fallidos.
+- Sección 7 en `docs/mensajeria/contrato-mensajes.md` y ajuste de la consecuencia "escritura doble" para apuntar a la reconciliación.
+- 7 pruebas nuevas; total del backend 56 en verde, 17 de contrato en verde, `build` y `lint` limpios.
+
+### Qué se corrigió
+
+- Al documentar, el shell interpretó los acentos graves del Markdown dentro de un `node -e` y la sección 7 quedó sin identificadores; se detectó al releer el archivo y se reescribió con la herramienta de escritura de archivos.
+- Se ejecutó por error un `git checkout` sobre `use-cases.spec.ts`; no perdió nada porque sus cambios ya estaban confirmados en `ab0a292` (se verificó con `git status`).
+
+### Rechazos con motivo técnico
+
+- **No se implementó un outbox:** ver arriba; la condición para reconsiderarlo sigue siendo la del ADR-0009 (consumidor cuyo efecto no pueda perderse, más de una instancia o fallidos reales).
+- **No se editó el ADR-0009** (ya aceptado; el repositorio sigue la regla de no reescribir ADRs aceptados): la decisión de usar reconciliación vive en `contrato-mensajes.md`.
+- **No se expuso un endpoint para reconciliar a demanda:** cambiaría el contrato OpenAPI versionado.
+
+### Límites conocidos
+
+- Una pérdida se corrige en ≤ 10 min (o al reiniciar), no al instante.
+- Compara solo por existencia: válido mientras el único evento sea de creación.
+- Lee todos los POIs cada 10 min; razonable con cientos de filas.
+- La auditoría sigue en memoria: la reconciliación la reconstruye, pero no la hace duradera.
+- No se probó contra Supabase real ni con `findAll` paginado sobre más de 1000 filas.
+
+### Lista de pendientes (estado al cierre del 2026-10-25)
+
+| # | Pendiente | Estado |
+|---|---|---|
+| 1 | Exportar el esquema de Supabase a `backend/supabase/schema.sql` (`supabase db dump --schema public`) | Abierto: requiere credenciales del responsable |
+| 2 | Caché de metadatos en la app (EC-04 sigue en 0/20) | Abierto |
+| 3 | `Idempotency-Key` HTTP en `POST /api/v1/pois` (cambia el contrato OpenAPI) | Abierto |
+| 4 | Taller de mensajería | **Resuelto** |
+| 5 | Guard de rol en `POST /api/v1/pois` | Abierto |
+| 6 | Arrays desnormalizados `edificios.pisos` y `pisos.pois` | Abierto |
+| 7 | `GetFloorModel` firma con `edificioId` (modelo por edificio, no por piso) | Abierto |
+| 8 | PR hacia `main` de `s10/datos-intensivos-cache` y `s10/taller-mensajeria` | Abierto |
+| 9 | Confirmar (commit) y subir (push) los cambios de la reconciliación | Abierto: lo hace el responsable |
+| 10 | `test:e2e` roto antes y después de estos cambios (espera `GET /` = 200) y errores de tipos preexistentes en `openapi.contract-spec.ts` | Abierto, sin relación con S10 |
+| 11 | Probar la reconciliación y la caché contra un Supabase real y verificar `/metrics` en Render | Abierto |
