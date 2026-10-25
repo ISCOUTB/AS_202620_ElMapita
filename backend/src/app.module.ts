@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from './shared/config/config.module';
 import { LoggerModule } from './shared/observability/logger.module';
 import { MetricsModule } from './shared/observability/metrics.module';
+import { CacheModule } from './shared/cache/cache.module';
 import { MapasModule } from './modules/mapas/mapas.module';
 import { UbicacionModule } from './modules/ubicacion/ubicacion.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -13,6 +14,7 @@ import { HealthController } from './health.controller';
     ConfigModule,
     LoggerModule,
     MetricsModule,
+    CacheModule,
     MapasModule,
     UbicacionModule,
     AuthModule,

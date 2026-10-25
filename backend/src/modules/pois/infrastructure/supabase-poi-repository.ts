@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../../../shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
+import { assertQueryOk } from '../../../shared/supabase/query-result';
 import {
   Poi,
   PoiId,
@@ -37,7 +38,8 @@ export class SupabasePoiRepository implements PoiRepository {
       .select('*')
       .eq('id', id)
       .single()) as { data: PoiRow | null; error: PostgrestError | null };
-    if (error || !data) return null;
+    assertQueryOk(error, 'pois.findById');
+    if (!data) return null;
     return this.mapToPoi(data);
   }
 
@@ -49,7 +51,8 @@ export class SupabasePoiRepository implements PoiRepository {
       data: PoiRow[] | null;
       error: PostgrestError | null;
     };
-    if (error || !data) return [];
+    assertQueryOk(error, 'pois.findByFloorId');
+    if (!data) return [];
     return data.map(this.mapToPoi);
   }
 
@@ -61,7 +64,8 @@ export class SupabasePoiRepository implements PoiRepository {
       data: PoiRow[] | null;
       error: PostgrestError | null;
     };
-    if (error || !data) return [];
+    assertQueryOk(error, 'pois.findByTipo');
+    if (!data) return [];
     return data.map(this.mapToPoi);
   }
 

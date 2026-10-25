@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../../../../shared/supabase/client';
 import { ConfigService } from '@nestjs/config';
+import { assertQueryOk } from '../../../../shared/supabase/query-result';
 import {
   Building,
   BuildingId,
@@ -53,7 +54,9 @@ export class SupabaseBuildingRepository implements BuildingRepository {
       .eq('id', id)
       .single()) as { data: EdificioRow | null; error: PostgrestError | null };
 
-    if (error || !data) return null;
+    assertQueryOk(error, 'edificios.findById');
+
+    if (!data) return null;
     return this.mapToBuilding(data);
   }
 
@@ -66,7 +69,9 @@ export class SupabaseBuildingRepository implements BuildingRepository {
       error: PostgrestError | null;
     };
 
-    if (error || !data) return [];
+    assertQueryOk(error, 'edificios.findAll');
+
+    if (!data) return [];
     return data.map(this.mapToBuilding);
   }
 
@@ -77,7 +82,9 @@ export class SupabaseBuildingRepository implements BuildingRepository {
       .eq('codigo', codigo)
       .single()) as { data: EdificioRow | null; error: PostgrestError | null };
 
-    if (error || !data) return null;
+    assertQueryOk(error, 'edificios.findByCodigo');
+
+    if (!data) return null;
     return this.mapToBuilding(data);
   }
 
@@ -108,7 +115,9 @@ export class SupabaseFloorRepository implements FloorRepository {
       .eq('id', id)
       .single()) as { data: PisoRow | null; error: PostgrestError | null };
 
-    if (error || !data) return null;
+    assertQueryOk(error, 'pisos.findById');
+
+    if (!data) return null;
     return this.mapToFloor(data);
   }
 
@@ -122,7 +131,9 @@ export class SupabaseFloorRepository implements FloorRepository {
       error: PostgrestError | null;
     };
 
-    if (error || !data) return [];
+    assertQueryOk(error, 'pisos.findByBuildingId');
+
+    if (!data) return [];
     return data.map(this.mapToFloor);
   }
 
