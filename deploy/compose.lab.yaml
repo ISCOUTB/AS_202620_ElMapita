@@ -1,0 +1,46 @@
+# El Mapita UTB — Docker Compose para despliegue en iscoutb.dev (panel Dokploy)
+# Equipo: ElMapita | Slug: elmapita | Rama: main
+# Solo se despliega el backend (API NestJS). El frontend Flutter no se despliega aquí.
+# Base de datos: Supabase (servicio externo), por lo que no hay servicio db local.
+#
+# Reglas del servidor (ver .md apartado 3.2):
+# - Sin ports: (se usa expose:)
+# - Sin container_name
+# - Sin bind mounts, sin privileged, sin /var/run/docker.sock, sin redes externas
+# - Volúmenes con nombre solo si hubiera datos locales (no aplica: Supabase es externo)
+# - Secretos con ${VARIABLE}; valores reales en el panel (Environment), nunca en el repo
+# - Límites de recursos: suma del equipo ≤ 512 MB, 0.5 CPU por contenedor
+
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - FRONTEND_URL=${FRONTEND_URL:-https://elmapita.iscoutb.dev}
+      - LOG_LEVEL=info
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+# Nota: no se declara servicio de base de datos ni volumen con nombre porque
+# El Mapita usa Supabase como proveedor externo (PostgreSQL + PostGIS + Auth + Storage).
+# Los datos persisten en Supabase, no en volúmenes locales del servidor iscoutb.dev.

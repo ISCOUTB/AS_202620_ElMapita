@@ -108,3 +108,8 @@ desktop.ini
 # Logs generales
 # =========================
 *.log
+
+# =========================
+# Variables de entorno del despliegue lab (iscoutb.dev)
+# =========================
+deploy/.env
