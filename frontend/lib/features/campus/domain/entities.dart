@@ -75,12 +75,22 @@ extension PlaceCategoryX on PlaceCategory {
 
 class CampusPlace {
   final String name;
+  final String nameEn;
   final PlaceCategory category;
   final String location;
+  final String locationEn;
 
   const CampusPlace({
     required this.name,
+    required this.nameEn,
     required this.category,
     required this.location,
+    required this.locationEn,
   });
+
+  /// Texto segun el idioma de la interfaz (`es` o `en`).
+  String nameFor(String languageCode) => languageCode == 'en' ? nameEn : name;
+
+  String locationFor(String languageCode) =>
+      languageCode == 'en' ? locationEn : location;
 }

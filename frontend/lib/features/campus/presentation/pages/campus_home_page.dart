@@ -1,10 +1,8 @@
 // lib/features/campus/presentation/pages/campus_home_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/theme/app_theme.dart';
-import '../../../../shared/locale/locale_cubit.dart';
+import '../../../../shared/locale/language_toggle_button.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../core/di/injector.dart';
 import '../../../mapas/infrastructure/api/campus_layers_repository.dart';
@@ -60,33 +58,18 @@ class _CampusHomePageState extends State<CampusHomePage> {
   String _title(AppLocalizations l10n) {
     if (_selected.isEmpty) return l10n.appTitle;
     if (_selected.length == 1) return categoryLabel(context, _selected.first);
-    return '${_selected.length} categorías';
+    return l10n.categoriesCount(_selected.length);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final locale = context.watch<LocaleCubit>().state;
+    final languageCode = Localizations.localeOf(context).languageCode;
     return Scaffold(
       appBar: AppBar(
         title: Text(_title(l10n)),
         actions: [
-          IconButton(
-            tooltip: 'Modelo 3D',
-            onPressed: () => context.push('/modelo-prueba'),
-            icon: const Icon(Icons.view_in_ar, color: AppTheme.onPrimary),
-          ),
-          IconButton(
-            tooltip: l10n.languageToggleTooltip,
-            onPressed: () => context.read<LocaleCubit>().toggle(),
-            icon: Text(
-              locale.languageCode.toUpperCase(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: AppTheme.onPrimary,
-              ),
-            ),
-          ),
+          const LanguageToggleButton(),
         ],
       ),
       drawer: _CategoryDrawer(
@@ -103,8 +86,8 @@ class _CampusHomePageState extends State<CampusHomePage> {
                 final place = _filteredPlaces[index];
                 return ListTile(
                   leading: Icon(place.category.icon, color: AppTheme.primary),
-                  title: Text(place.name),
-                  subtitle: Text(place.location),
+                  title: Text(place.nameFor(languageCode)),
+                  subtitle: Text(place.locationFor(languageCode)),
                 );
               },
             ),

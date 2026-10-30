@@ -265,6 +265,138 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Cajero Automático'**
   String get categoryCajeroAutomatico;
+
+  /// No description provided for @navMap3d.
+  ///
+  /// In es, this message translates to:
+  /// **'Mapa 3D'**
+  String get navMap3d;
+
+  /// No description provided for @navPlaces.
+  ///
+  /// In es, this message translates to:
+  /// **'Lugares'**
+  String get navPlaces;
+
+  /// No description provided for @model3dTitle.
+  ///
+  /// In es, this message translates to:
+  /// **'Modelo 3D del campus'**
+  String get model3dTitle;
+
+  /// No description provided for @model3dAlt.
+  ///
+  /// In es, this message translates to:
+  /// **'Modelo 3D del campus UTB'**
+  String get model3dAlt;
+
+  /// No description provided for @modelLoadError.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo cargar el modelo 3D.'**
+  String get modelLoadError;
+
+  /// No description provided for @retry.
+  ///
+  /// In es, this message translates to:
+  /// **'Reintentar'**
+  String get retry;
+
+  /// No description provided for @goTo.
+  ///
+  /// In es, this message translates to:
+  /// **'Ir a…'**
+  String get goTo;
+
+  /// No description provided for @pickDestination.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A dónde quieres ir?'**
+  String get pickDestination;
+
+  /// No description provided for @pickDestinationFiltered.
+  ///
+  /// In es, this message translates to:
+  /// **'¿A dónde quieres ir? (categorías filtradas)'**
+  String get pickDestinationFiltered;
+
+  /// No description provided for @noBuildingsInFilter.
+  ///
+  /// In es, this message translates to:
+  /// **'No hay edificios en el filtro actual'**
+  String get noBuildingsInFilter;
+
+  /// No description provided for @destinationChip.
+  ///
+  /// In es, this message translates to:
+  /// **'Destino: {name}'**
+  String destinationChip(String name);
+
+  /// No description provided for @guideOnTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Guía de llegada: activada (tocar para desactivar)'**
+  String get guideOnTooltip;
+
+  /// No description provided for @guideOffTooltip.
+  ///
+  /// In es, this message translates to:
+  /// **'Guía de llegada: desactivada (tocar para activar)'**
+  String get guideOffTooltip;
+
+  /// No description provided for @guideOnMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Guía de llegada activada'**
+  String get guideOnMessage;
+
+  /// No description provided for @guideOffMessage.
+  ///
+  /// In es, this message translates to:
+  /// **'Guía de llegada desactivada'**
+  String get guideOffMessage;
+
+  /// No description provided for @guideHeading.
+  ///
+  /// In es, this message translates to:
+  /// **'Rumbo a {name} · {meters} m'**
+  String guideHeading(String name, int meters);
+
+  /// No description provided for @guideNear.
+  ///
+  /// In es, this message translates to:
+  /// **'Cerca de {name} · {meters} m'**
+  String guideNear(String name, int meters);
+
+  /// No description provided for @guideArrived.
+  ///
+  /// In es, this message translates to:
+  /// **'¡Llegaste a {name}!'**
+  String guideArrived(String name);
+
+  /// No description provided for @statusOutside.
+  ///
+  /// In es, this message translates to:
+  /// **'Posición lejana de la zona'**
+  String get statusOutside;
+
+  /// No description provided for @statusDenied.
+  ///
+  /// In es, this message translates to:
+  /// **'Activa el permiso de ubicación para verte en el mapa'**
+  String get statusDenied;
+
+  /// No description provided for @statusUnavailable.
+  ///
+  /// In es, this message translates to:
+  /// **'No se pudo obtener tu ubicación'**
+  String get statusUnavailable;
+
+  /// No description provided for @categoriesCount.
+  ///
+  /// In es, this message translates to:
+  /// **'{count} categorías'**
+  String categoriesCount(int count);
 }
 
 class _AppLocalizationsDelegate

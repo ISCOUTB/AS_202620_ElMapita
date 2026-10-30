@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/di/injector.dart';
 import '../../core/storage/local_storage.dart';
+import '../../features/mapas/infrastructure/api/campus_layers_repository.dart';
+import '../../features/mapas/infrastructure/storage/model_cache.dart';
 import '../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -20,7 +22,20 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
+    _warmUp();
     _bootstrap();
+  }
+
+  /// Mientras se ve la pantalla de carga se baja el modelo 3D y sus capas, así
+  /// el mapa (pantalla de inicio) abre sin esperar. Un fallo no bloquea nada:
+  /// la pantalla 3D reintenta y muestra su propio error.
+  void _warmUp() {
+    getIt<ModelCache>().getOrDownloadModel(
+      buildingId: kCampusBuildingId,
+      version: kCampusModelVersion,
+      downloadUrl: kCampusModelUrl,
+    );
+    getIt<CampusLayersRepository>().load();
   }
 
   Future<void> _bootstrap() async {

@@ -36,10 +36,13 @@ class _FakeStorage extends Fake implements LocalStorage {
 
 class _BytesAdapter implements HttpClientAdapter {
   bool fail = false;
+  int requests = 0;
 
   @override
   Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? s,
       Future<void>? c) async {
+    requests++;
+    await Future<void>.delayed(const Duration(milliseconds: 20));
     if (fail) throw DioException(requestOptions: o, message: 'sin red');
     return ResponseBody.fromBytes([1, 2, 3], 200);
   }
@@ -94,6 +97,24 @@ void main() {
 
     expect(fileOf('v1').existsSync(), isTrue);
     expect(storage.getCachedModelsOf('b1').keys, ['v1']);
+  });
+
+  test('dos pedidos simultáneos de la misma version hacen una sola descarga',
+      () async {
+    await Future.wait([download('v1'), download('v1')]);
+
+    expect(adapter.requests, 1);
+    expect(fileOf('v1').existsSync(), isTrue);
+  });
+
+  test('si la descarga compartida falla, el siguiente pedido reintenta',
+      () async {
+    adapter.fail = true;
+    await Future.wait([download('v1'), download('v1')]);
+    adapter.fail = false;
+    await download('v1');
+
+    expect(fileOf('v1').existsSync(), isTrue);
   });
 
   test('clearAllCache vacía disco e índice', () async {

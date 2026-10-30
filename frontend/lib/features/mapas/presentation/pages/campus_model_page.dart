@@ -14,6 +14,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../../../core/di/injector.dart';
 import '../../../../core/platform/location_service.dart';
 import '../../../../core/storage/local_storage.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../shared/locale/language_toggle_button.dart';
 import '../../../campus/application/campus_filter.dart';
 import '../../../campus/domain/entities.dart';
 import '../../../campus/presentation/category_labels.dart';
@@ -32,6 +34,16 @@ class CampusModelPage extends StatefulWidget {
 }
 
 enum _UserStatus { locating, denied, unavailable, outside, inside }
+
+/// Estado de la guia de llegada; el texto se arma al dibujar, con el idioma
+/// vigente, para que cambie de idioma sin esperar la siguiente posicion.
+class _GuideState {
+  final ArrivalPhase phase;
+  final String label;
+  final int meters;
+
+  const _GuideState(this.phase, this.label, this.meters);
+}
 
 class _CampusModelPageState extends State<CampusModelPage> {
   static const double _userMarkerHeight = 3;
@@ -57,7 +69,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
 
   // Guia de llegada: destino elegido, estado y vibracion.
   final ValueNotifier<Destination?> _destination = ValueNotifier(null);
-  final ValueNotifier<String?> _guideMessage = ValueNotifier(null);
+  final ValueNotifier<_GuideState?> _guideState = ValueNotifier(null);
   late bool _guideEnabled;
   ModelPoint? _lastPoint;
   Timer? _nearTimer;
@@ -80,7 +92,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
     Vibration.cancel();
     _status.dispose();
     _destination.dispose();
-    _guideMessage.dispose();
+    _guideState.dispose();
     super.dispose();
   }
 
@@ -97,9 +109,11 @@ class _CampusModelPageState extends State<CampusModelPage> {
     _nodes = await GlbNodeNames.read(path);
     _bounds = await GlbNodeBounds.read(path);
     _layers = await getIt<CampusLayersRepository>().load();
+    if (!mounted) throw StateError('pagina cerrada');
+    final alt = AppLocalizations.of(context)!.model3dAlt;
     return ModelViewer(
       src: 'file://$path',
-      alt: 'Modelo 3D del campus UTB',
+      alt: alt,
       backgroundColor: const Color(0xFF1B2A41),
       cameraControls: true,
       autoRotate: false,
@@ -222,8 +236,8 @@ class _CampusModelPageState extends State<CampusModelPage> {
     getIt<LocalStorage>().setBool(_guideOffKey, !_guideEnabled);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(_guideEnabled
-          ? 'Guía de llegada activada'
-          : 'Guía de llegada desactivada'),
+          ? AppLocalizations.of(context)!.guideOnMessage
+          : AppLocalizations.of(context)!.guideOffMessage),
       duration: const Duration(seconds: 2),
     ));
     _updateGuide();
@@ -239,7 +253,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
       _nearTimer?.cancel();
       _nearTimer = null;
       Vibration.cancel();
-      _guideMessage.value = null;
+      _guideState.value = null;
       return;
     }
     final distance = destination.bounds.distanceTo(point);
@@ -254,13 +268,13 @@ class _CampusModelPageState extends State<CampusModelPage> {
         _nearTimer?.cancel();
         _nearTimer = null;
         _arrivedNotified = false;
-        _guideMessage.value = 'Rumbo a ${destination.label} · $metres m';
+        _guideState.value = _GuideState(phase, destination.label, metres);
       case ArrivalPhase.near:
         if (_nearTimer == null) {
           _vibrate(arrived: false);
           _nearTimer = Timer.periodic(_nearBuzzEvery, (_) => _vibrate(arrived: false));
         }
-        _guideMessage.value = 'Cerca de ${destination.label} · $metres m';
+        _guideState.value = _GuideState(phase, destination.label, metres);
       case ArrivalPhase.arrived:
         _nearTimer?.cancel();
         _nearTimer = null;
@@ -268,7 +282,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
           _arrivedNotified = true;
           _vibrate(arrived: true);
         }
-        _guideMessage.value = '¡Llegaste a ${destination.label}!';
+        _guideState.value = _GuideState(phase, destination.label, metres);
     }
   }
 
@@ -320,14 +334,16 @@ class _CampusModelPageState extends State<CampusModelPage> {
               padding: const EdgeInsets.all(16),
               child: Text(
                 filtered
-                    ? '¿A dónde quieres ir? (categorías filtradas)'
-                    : '¿A dónde quieres ir?',
+                    ? AppLocalizations.of(context)!.pickDestinationFiltered
+                    : AppLocalizations.of(context)!.pickDestination,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
             Expanded(
               child: options.isEmpty
-                  ? const Center(child: Text('No hay edificios en el filtro actual'))
+                  ? Center(
+                      child: Text(
+                          AppLocalizations.of(context)!.noBuildingsInFilter))
                   : ListView(
                       controller: scroll,
                       children: [
@@ -467,14 +483,13 @@ class _CampusModelPageState extends State<CampusModelPage> {
 
   function paint() {
     var scene = getScene();
-    if (!scene) { console.log('[mapita] paint: sin escena'); return; }
+    if (!scene) return;
     scene.traverse(function (o) {
       if (o.isMesh && o.userData.originalMaterial) {
         o.material = o.userData.originalMaterial;
         delete o.userData.originalMaterial;
       }
     });
-    var painted = 0;
     if (highlighted) {
       scene.traverse(function (o) {
         if (o.name !== highlighted) return;
@@ -484,11 +499,9 @@ class _CampusModelPageState extends State<CampusModelPage> {
           mesh.material = Array.isArray(mesh.material)
             ? mesh.material.map(tint)
             : tint(mesh.material);
-          painted++;
         });
       });
     }
-    console.log('[mapita] highlight=' + highlighted + ' meshes=' + painted);
     scene.queueRender();
   }
 
@@ -531,23 +544,23 @@ class _CampusModelPageState extends State<CampusModelPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modelo 3D del campus'),
+        title: Text(l10n.model3dTitle),
         actions: [
           IconButton(
-            tooltip: _guideEnabled
-                ? 'Guía de llegada: activada (tocar para desactivar)'
-                : 'Guía de llegada: desactivada (tocar para activar)',
+            tooltip: _guideEnabled ? l10n.guideOnTooltip : l10n.guideOffTooltip,
             icon: Icon(_guideEnabled ? Icons.vibration : Icons.mobile_off),
             onPressed: _toggleGuide,
           ),
+          const LanguageToggleButton(),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _pickDestination,
         icon: const Icon(Icons.flag_outlined),
-        label: const Text('Ir a…'),
+        label: Text(l10n.goTo),
       ),
       body: FutureBuilder<Widget>(
         future: _viewer,
@@ -575,7 +588,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
                 bottom: 16,
                 child: _StatusBanner(
                   status: _status,
-                  guideMessage: _guideMessage,
+                  guideState: _guideState,
                   destination: _destination,
                   guideEnabled: _guideEnabled,
                   onClearDestination: () => _setDestination(null),
@@ -630,34 +643,40 @@ class _FilterChips extends StatelessWidget {
 
 class _StatusBanner extends StatelessWidget {
   final ValueNotifier<_UserStatus> status;
-  final ValueNotifier<String?> guideMessage;
+  final ValueNotifier<_GuideState?> guideState;
   final ValueNotifier<Destination?> destination;
   final bool guideEnabled;
   final VoidCallback onClearDestination;
 
   const _StatusBanner({
     required this.status,
-    required this.guideMessage,
+    required this.guideState,
     required this.destination,
     required this.guideEnabled,
     required this.onClearDestination,
   });
 
-  static const Map<_UserStatus, String> _messages = {
-    _UserStatus.outside: 'Posición lejana de la zona',
-    _UserStatus.denied:
-        'Activa el permiso de ubicación para verte en el mapa',
-    _UserStatus.unavailable: 'No se pudo obtener tu ubicación',
-  };
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = {
+      _UserStatus.outside: l10n.statusOutside,
+      _UserStatus.denied: l10n.statusDenied,
+      _UserStatus.unavailable: l10n.statusUnavailable,
+    };
     return ListenableBuilder(
-      listenable: Listenable.merge([status, guideMessage, destination]),
+      listenable: Listenable.merge([status, guideState, destination]),
       builder: (context, _) {
         final target = destination.value;
-        final guide = guideMessage.value;
-        final location = _messages[status.value];
+        final state = guideState.value;
+        final guide = state == null
+            ? null
+            : switch (state.phase) {
+                ArrivalPhase.far => l10n.guideHeading(state.label, state.meters),
+                ArrivalPhase.near => l10n.guideNear(state.label, state.meters),
+                ArrivalPhase.arrived => l10n.guideArrived(state.label),
+              };
+        final location = messages[status.value];
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,7 +687,7 @@ class _StatusBanner extends StatelessWidget {
                   guideEnabled ? Icons.flag : Icons.flag_outlined,
                   size: 18,
                 ),
-                label: Text('Destino: ${target.label}'),
+                label: Text(l10n.destinationChip(target.label)),
                 onDeleted: onClearDestination,
               ),
             if (guide != null)
@@ -699,13 +718,14 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('No se pudo cargar el modelo 3D.'),
+          Text(l10n.modelLoadError),
           const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: const Text('Reintentar')),
+          FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
         ],
       ),
     );

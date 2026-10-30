@@ -27,5 +27,68 @@
   "categoryAreasVerdes": "Áreas Verdes y Plazas",
   "categoryControlEscolar": "Control Escolar",
   "categoryVigilancia": "Vigilancia y Accesos",
-  "categoryCajeroAutomatico": "Cajero Automático"
+  "categoryCajeroAutomatico": "Cajero Automático",
+  "navMap3d": "Mapa 3D",
+  "navPlaces": "Lugares",
+  "model3dTitle": "Modelo 3D del campus",
+  "model3dAlt": "Modelo 3D del campus UTB",
+  "modelLoadError": "No se pudo cargar el modelo 3D.",
+  "retry": "Reintentar",
+  "goTo": "Ir a…",
+  "pickDestination": "¿A dónde quieres ir?",
+  "pickDestinationFiltered": "¿A dónde quieres ir? (categorías filtradas)",
+  "noBuildingsInFilter": "No hay edificios en el filtro actual",
+  "destinationChip": "Destino: {name}",
+  "@destinationChip": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "guideOnTooltip": "Guía de llegada: activada (tocar para desactivar)",
+  "guideOffTooltip": "Guía de llegada: desactivada (tocar para activar)",
+  "guideOnMessage": "Guía de llegada activada",
+  "guideOffMessage": "Guía de llegada desactivada",
+  "guideHeading": "Rumbo a {name} · {meters} m",
+  "@guideHeading": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "guideNear": "Cerca de {name} · {meters} m",
+  "@guideNear": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "guideArrived": "¡Llegaste a {name}!",
+  "@guideArrived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "statusOutside": "Posición lejana de la zona",
+  "statusDenied": "Activa el permiso de ubicación para verte en el mapa",
+  "statusUnavailable": "No se pudo obtener tu ubicación",
+  "categoriesCount": "{count} categorías",
+  "@categoriesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

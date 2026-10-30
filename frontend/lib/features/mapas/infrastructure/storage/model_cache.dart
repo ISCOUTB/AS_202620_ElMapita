@@ -24,18 +24,38 @@ class ModelCache {
     receiveTimeout: const Duration(minutes: 5),
   ));
 
+  /// Descargas en curso por (edificio, versión): la precarga del splash y la
+  /// pantalla 3D comparten una sola descarga en vez de escribir el mismo
+  /// archivo dos veces.
+  final Map<String, Future<Either<String, String>>> _inFlight = {};
+
   Future<Either<String, String>> getOrDownloadModel({
     required String buildingId,
     required String version,
     required String downloadUrl,
-  }) async {
+  }) {
     // Check cache first
     final cachedPath = _storage.getCachedModelPath(buildingId, version);
     if (cachedPath != null) {
-      return Right(cachedPath);
+      return Future.value(Right(cachedPath));
     }
 
-    // Download if not cached
+    final key = '$buildingId/$version';
+    return _inFlight.putIfAbsent(
+      key,
+      () => _downloadAndEvict(buildingId, version, downloadUrl)
+          .whenComplete(() {
+        // Sin devolver el Future que quita: whenComplete esperaria a ese mismo.
+        _inFlight.remove(key);
+      }),
+    );
+  }
+
+  Future<Either<String, String>> _downloadAndEvict(
+    String buildingId,
+    String version,
+    String downloadUrl,
+  ) async {
     final result = await _downloadModel(buildingId, version, downloadUrl);
     // Solo se desaloja tras una descarga exitosa: si falla, se conserva la
     // versión anterior para poder seguir usando el mapa sin red.

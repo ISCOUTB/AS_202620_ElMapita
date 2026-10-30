@@ -754,3 +754,79 @@ Las entradas S10 anteriores a esta hablan del "ADR-0008" cuando se escribieron; 
 | # | Pendiente | Estado |
 |---|---|---|
 | 12 | Confirmar el merge (`git commit`) y hacer el push; luego abrir el PR de las dos ramas `s10` | Abierto: lo hace el responsable |
+
+---
+
+## 2026-10-29 — Mapa 3D del campus: Supabase, filtro por capas, ubicación, guía de llegada, animaciones, navegación e idiomas
+
+**Herramienta:** Claude Code (Claude Sonnet 5.5). **Responsable:** Angel Fabian Gutierrez Gomez. Rama `main`. La primera parte quedó confirmada por el responsable en `0dca1ad`; la segunda (pestañas, deslizamiento, idiomas, precarga) sigue **sin commit** en el árbol de trabajo.
+
+### Prompts usados (resumidos)
+
+1. Cambiar el modelo 3D de prueba por el mapa del campus, subirlo a Supabase, traerlo a la app con caché local y vincular las capas del modelo con el filtro.
+2. Analizar `utb_campus.blend` y `utb_campus.glb`; crear el bucket desde el SQL Editor; probar en el teléfono conectado.
+3. Filtro en vivo, vista inicial cenital tipo isométrica con límites de zoom, ubicación del teléfono en tiempo real con aviso "posición lejana de la zona".
+4. Obtener de OpenStreetMap las coordenadas para georreferenciar el modelo ("no tengo la información exacta").
+5. Elegir un edificio como destino a través del filtro, con vibración al acercarse y aviso de llegada, fácil de activar y desactivar.
+6. Quitar del filtro y del listado lo que no tiene ubicación en el 3D; resaltar el destino; mostrar todo al quitar el destino.
+7. Animar la aparición y desaparición de edificios ("crecer desde el suelo").
+8. Hacer el mapa 3D la pantalla de inicio (opción 1: barra inferior de dos pestañas), deslizamiento entre pestañas y cambio de idioma ES/EN en toda la app con la herramienta existente.
+9. Documentar en este archivo y borrar el código de diagnóstico.
+
+### Qué se aceptó
+
+- **Datos en Supabase (creados por el responsable desde el SQL Editor):** bucket público `mapa-campus` (límite 20 MB) con `utb_campus.glb` (3.82 MB) y tabla `mapa_capas (categoria, nodo)` con RLS de solo lectura pública y 37 filas. La app lee con la clave `publishable`; **no se compartió ni se usó la `service_role`** y no se leyó ningún `.env`.
+- **Cliente (`frontend/lib/features/mapas`):** descarga a la caché local con `ModelCache` (versión `kCampusModelVersion`), lectura de nombres y cajas de nodo del bloque JSON del `.glb` (`GlbNodeNames`, `GlbNodeBounds`), capas con respaldo local (`CampusLayersRepository`) y lógica pura probada (`CampusLayers`, `CampusGeoReference`, `ArrivalGuide`).
+- **Visor:** `model_viewer_plus` con cámara inicial `0deg 40deg 900m`, campo de visión fijo de 25°, zoom entre 70 m y 1400 m, ángulo entre 5° y 75° y paneo limitado a 190 m del centro.
+- **Filtro en vivo:** chips con selección múltiple; el JS del visor oculta nodos sin recargar el modelo. Con filtro activo solo quedan visibles el terreno, las vías, el andén y los nodos de las categorías elegidas.
+- **Animación:** el nodo crece o se hunde en `scale.y` (320 ms, escalonado de 20 ms hasta 140 ms); se verificó antes que los edificios tienen su base en y=0.
+- **Ubicación y guía:** posición cada 3 m proyectada al modelo; punto azul solo dentro del campus más 30 m de margen; fuera de rango, el aviso "Posición lejana de la zona" y sin punto. Destino elegido en "Ir a…" (respeta el filtro), que activa su categoría y resalta el edificio en ámbar; vibración cada 4 s a ≤ 60 m del borde y vibración larga única a ≤ 15 m; interruptor persistente en la barra superior.
+- **Navegación:** mapa 3D como pantalla de inicio y pestañas *Mapa 3D* / *Lugares* con `StatefulShellRoute` y deslizamiento horizontal de 300 ms; el visor conserva su estado. Precarga del `.glb` y de las capas durante el splash.
+- **Idiomas:** 22 claves nuevas en `app_es.arb` y `app_en.arb`, botón ES/EN en ambas pestañas (`LanguageToggleButton`), mensajes de la guía armados al dibujar y lugares de ejemplo con texto en los dos idiomas.
+- **Pruebas:** 30 en verde (capas, georreferencia, guía de llegada, caché, localización).
+
+### Calibración con OpenStreetMap
+
+- El polígono "Universidad Tecnológica de Bolívar - Campus Ternera" (way 68735397) y sus edificios con nombre (Edificio A1–A5, biblioteca, canchas) se emparejaron con los nodos del `.glb` y se ajustó una transformación por mínimos cuadrados.
+- Mejor subconjunto (A1, A2, A5, cancha de fútbol y de béisbol): **error medio de ~9 m**, rotación de ~43° respecto al norte y escala ~0.96. Los bloques A3 y A4 se excluyeron porque diferían ~40 m (probable dibujo impreciso en OSM).
+- Datos © colaboradores de OpenStreetMap (ODbL).
+
+### Qué se corrigió
+
+- **Rutas de datos:** la tabla `buildings` y el bucket `modelos-3d` que supuse no eran visibles con la clave pública; se creó un bucket nuevo (`mapa-campus`) en lugar de depender de ellos.
+- **Edificios que no se ocultaban:** la primera regla trataba como "base" todo lo que no estaba en `mapa_capas` (Talleres, Ingeniería, bohíos…). Se cambió a una lista explícita de base (terreno, vías, andén) y se ocultan el resto de nodos sin categoría.
+- **Resaltado ámbar invisible:** el diagnóstico en el teléfono mostró que el resaltado sí se ejecutaba y encontraba el nodo; los colores pastel del modelo lo dejaban casi blanco al sumar solo emisión. Se reemplazó también el color base.
+- **Interbloqueo en `ModelCache`:** al compartir la descarga entre el splash y la pantalla 3D, `whenComplete(() => _inFlight.remove(key))` devolvía el propio `Future` y la esperaba a sí misma; las pruebas se colgaron 30 s. Se corrigió con un cuerpo que no devuelve nada y se dejó una prueba de descarga compartida y otra de reintento tras fallo.
+- **Candidato de revisión obsoleto:** el hook de revisión pidió revisar un candidato que el responsable había confirmado mientras tanto (`stale_target_identity`); se re-evaluó el rango confirmado (`review_due: false`, `under_budget`).
+- **Código de diagnóstico** (`console.log('[mapita] …')`) eliminado del JS del visor.
+
+### Rechazos con motivo técnico
+
+- **No se subió el `.glb` desde la IA:** hacía falta una credencial de escritura que el responsable no debía compartir; la subida la hizo él desde el panel.
+- **No se usó fundido (opacidad) para animar:** exige clonar cada material como transparente y ordenar la transparencia; se eligió `scale.y`, más barato.
+- **No se tradujeron** los nombres de edificios del modelo (nombres propios en el `.glb`) ni las pantallas hoy inalcanzables (login, registro, lista de edificios, `MapPage`, ubicación manual): ninguna ruta lleva a ellas.
+- **Talleres e Ingeniería** quedaron fuera del filtro y de los destinos por decisión del responsable ("solo hay que trabajar con la información del mapa 3D").
+- **Se eliminaron del listado** los 11 lugares de ejemplo de categorías sin capa (baños, servicios escolares, enfermería, cajero, papelería, etc.).
+
+### Límites conocidos
+
+- La calibración es **provisional** (~9 m): "llegaste" y el punto azul pueden adelantarse o atrasarse. El responsable calibrará caminando el campus.
+- La ocultación usa un símbolo interno de `<model-viewer>` (`scene`): puede dejar de funcionar si cambia la versión del paquete.
+- El `.glb` subido todavía incluye `Plano_Referencia` (se oculta en la app, pero pesa); al subir otra versión hay que cambiar `kCampusModelVersion` o los teléfonos seguirán con la caché vieja.
+- `UTB_Ventanas` y `UTB_Puertas` son un solo objeto para todo el campus y solo se ocultan con filtro activo.
+- La clave `publishable` está en el código (es pública por diseño; la escritura de `mapa_capas` está cerrada por RLS).
+- **Revisión de secretos (2026-10-29):** se buscaron llaves, tokens, cadenas de conexión y claves privadas en este archivo y en todo lo versionado, sin encontrar ningún secreto real. Las coincidencias eran marcadores de posición (`.env.example`, `README.md`) y el esquema de validación de variables (`config.module.ts`). Este archivo no contiene valores de llaves, correos ni identificadores de dispositivo. Se añadieron al `.gitignore` `.atl/`, `.claude/`, `.codegraph/`, `.engram/` y credenciales de Firebase/Google; los `.env` ya estaban ignorados y los `.env.example` siguen versionados.
+- El deslizamiento anima una vista nativa (WebView); puede verse entrecortado en equipos lentos.
+- Probado en un Samsung SM-A556E (Android 16); no se probó en iOS ni en el campus real. Desde fuera del campus solo se comprobó el aviso de "posición lejana".
+
+### Pendientes derivados
+
+| # | Pendiente | Estado |
+|---|---|---|
+| 13 | Calibrar la georreferencia caminando el campus (3 puntos conocidos) | Abierto: lo hace el responsable |
+| 14 | Re-exportar el `.glb` sin `Plano_Referencia` y subir como nueva versión (`kCampusModelVersion`) | Abierto |
+| 15 | Confirmar (commit) los cambios de pestañas, deslizamiento, idiomas y precarga | Abierto: lo hace el responsable |
+| 16 | `.atl/` (caché de herramientas con rutas de la máquina) quedó versionado en `0dca1ad` | **Resuelto en el árbol de trabajo:** ignorado y fuera del índice (`git rm --cached`); sigue en el historial hasta que se confirme y, si ya se subió, en el remoto |
+| 19 | Confirmar (commit) la salida de `.atl/` del índice y las reglas nuevas de `.gitignore` | Abierto: lo hace el responsable |
+| 17 | Traducir login, registro, lista de edificios, `MapPage` y ubicación manual cuando se conecten a la app | Abierto |
+| 18 | Limpiar los valores sin uso de `PlaceCategory` y sus textos de traducción | Abierto |

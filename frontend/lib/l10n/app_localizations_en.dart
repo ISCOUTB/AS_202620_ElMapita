@@ -92,4 +92,83 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryCajeroAutomatico => 'ATM';
+
+  @override
+  String get navMap3d => '3D Map';
+
+  @override
+  String get navPlaces => 'Places';
+
+  @override
+  String get model3dTitle => 'Campus 3D model';
+
+  @override
+  String get model3dAlt => 'UTB campus 3D model';
+
+  @override
+  String get modelLoadError => 'Could not load the 3D model.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get goTo => 'Go to…';
+
+  @override
+  String get pickDestination => 'Where do you want to go?';
+
+  @override
+  String get pickDestinationFiltered =>
+      'Where do you want to go? (filtered categories)';
+
+  @override
+  String get noBuildingsInFilter =>
+      'There are no buildings in the current filter';
+
+  @override
+  String destinationChip(String name) {
+    return 'Destination: $name';
+  }
+
+  @override
+  String get guideOnTooltip => 'Arrival guide: on (tap to turn off)';
+
+  @override
+  String get guideOffTooltip => 'Arrival guide: off (tap to turn on)';
+
+  @override
+  String get guideOnMessage => 'Arrival guide on';
+
+  @override
+  String get guideOffMessage => 'Arrival guide off';
+
+  @override
+  String guideHeading(String name, int meters) {
+    return 'Heading to $name · $meters m';
+  }
+
+  @override
+  String guideNear(String name, int meters) {
+    return 'Near $name · $meters m';
+  }
+
+  @override
+  String guideArrived(String name) {
+    return 'You have arrived at $name!';
+  }
+
+  @override
+  String get statusOutside => 'Position far from the area';
+
+  @override
+  String get statusDenied =>
+      'Enable location permission to see yourself on the map';
+
+  @override
+  String get statusUnavailable => 'Could not get your location';
+
+  @override
+  String categoriesCount(int count) {
+    return '$count categories';
+  }
 }

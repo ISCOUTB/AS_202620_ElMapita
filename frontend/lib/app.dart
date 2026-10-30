@@ -23,22 +23,39 @@ final _router = GoRouter(
       path: '/splash',
       builder: (context, state) => const SplashPage(),
     ),
-    GoRoute(
-      path: '/map',
-      builder: (context, state) => const CampusHomePage(),
-      routes: [
-        GoRoute(
-          path: 'building/:buildingId',
-          builder: (context, state) {
-            final buildingId = state.pathParameters['buildingId']!;
-            return MapPage(buildingId: buildingId);
-          },
+    // Dos pestanas que conservan su estado (el visor 3D no se recarga al
+    // cambiar de pestana). El mapa 3D es la pantalla de inicio.
+    StatefulShellRoute(
+      builder: (context, state, shell) => _HomeShell(shell: shell),
+      navigatorContainerBuilder: (context, shell, children) =>
+          _SlidingBranches(index: shell.currentIndex, children: children),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/map',
+              builder: (context, state) => const CampusModelPage(),
+              routes: [
+                GoRoute(
+                  path: 'building/:buildingId',
+                  builder: (context, state) {
+                    final buildingId = state.pathParameters['buildingId']!;
+                    return MapPage(buildingId: buildingId);
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/lugares',
+              builder: (context, state) => const CampusHomePage(),
+            ),
+          ],
         ),
       ],
-    ),
-    GoRoute(
-      path: '/modelo-prueba',
-      builder: (context, state) => const CampusModelPage(),
     ),
     GoRoute(
       path: '/location',
@@ -46,6 +63,78 @@ final _router = GoRouter(
     ),
   ],
 );
+
+/// Barra inferior con las dos pestañas principales: mapa 3D y lugares.
+class _HomeShell extends StatelessWidget {
+  final StatefulNavigationShell shell;
+
+  const _HomeShell({required this.shell});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      body: shell,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: shell.currentIndex,
+        // Tocar la pestaña activa vuelve a su raíz.
+        onDestinationSelected: (index) =>
+            shell.goBranch(index, initialLocation: index == shell.currentIndex),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.view_in_ar_outlined),
+            selectedIcon: const Icon(Icons.view_in_ar),
+            label: l10n.navMap3d,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.list_alt_outlined),
+            selectedIcon: const Icon(Icons.list_alt),
+            label: l10n.navPlaces,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Muestra las pestañas una junto a otra y desliza horizontalmente de una a
+/// la otra. Todas siguen montadas (el visor 3D conserva su estado); la que
+/// queda fuera de pantalla se oculta.
+class _SlidingBranches extends StatelessWidget {
+  static const Duration _duration = Duration(milliseconds: 300);
+
+  final int index;
+  final List<Widget> children;
+
+  const _SlidingBranches({required this.index, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(end: index.toDouble()),
+        duration: _duration,
+        curve: Curves.easeOutCubic,
+        builder: (context, position, _) => Stack(
+          fit: StackFit.expand,
+          children: [
+            for (var i = 0; i < children.length; i++)
+              Offstage(
+                offstage: (i - position).abs() >= 1,
+                child: FractionalTranslation(
+                  translation: Offset(i - position, 0),
+                  child: TickerMode(
+                    enabled: (i - position).abs() < 1,
+                    child: children[i],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ElMapitaApp extends StatelessWidget {
   const ElMapitaApp({super.key});
