@@ -66,6 +66,8 @@
 			<string>UIInterfaceOrientationLandscapeLeft</string>
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>Se usa tu ubicacion para mostrarte en el mapa 3D del campus.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

@@ -11,6 +11,8 @@ import 'package:frontend/core/platform/permission_service.dart';
 import 'package:frontend/core/platform/location_service.dart';
 import 'package:frontend/features/mapas/infrastructure/api/mapas_api.dart';
 import 'package:frontend/features/mapas/infrastructure/storage/model_cache.dart';
+import 'package:frontend/features/mapas/infrastructure/api/campus_layers_repository.dart';
+import 'package:frontend/features/campus/application/campus_filter.dart';
 import 'package:frontend/features/mapas/application/load_building_use_case.dart';
 import 'package:frontend/features/mapas/presentation/bloc/mapas_bloc.dart';
 import 'package:frontend/features/ubicacion/domain/repositories.dart';
@@ -46,6 +48,10 @@ Future<void> setupDependencies() async {
   // Feature: Mapas
   getIt.registerLazySingleton<MapasApi>(() => MapasApi(getIt<Dio>()));
   getIt.registerLazySingleton<ModelCache>(() => ModelCache(getIt<LocalStorage>()));
+  getIt.registerLazySingleton<CampusFilter>(() => CampusFilter());
+  getIt.registerLazySingleton<CampusLayersRepository>(
+    () => CampusLayersRepository(getIt<LocalStorage>()),
+  );
   getIt.registerFactory<LoadBuildingUseCase>(() => LoadBuildingUseCase(
     api: getIt<MapasApi>(),
     cache: getIt<ModelCache>(),

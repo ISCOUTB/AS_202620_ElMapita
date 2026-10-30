@@ -6,6 +6,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/locale/locale_cubit.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../core/di/injector.dart';
+import '../../../mapas/infrastructure/api/campus_layers_repository.dart';
+import '../../application/campus_filter.dart';
 import '../../data/mock_places.dart';
 import '../../domain/entities.dart';
 import '../category_labels.dart';
@@ -18,18 +21,46 @@ class CampusHomePage extends StatefulWidget {
 }
 
 class _CampusHomePageState extends State<CampusHomePage> {
-  PlaceCategory? _selectedCategory;
+  final CampusFilter _filter = getIt<CampusFilter>();
+
+  Set<PlaceCategory> get _selected => _filter.value;
+
+  /// Categorias con ubicacion en el modelo 3D (vacio mientras carga o sin datos).
+  Set<String> _available = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _filter.addListener(_onFilterChanged);
+    getIt<CampusLayersRepository>().load().then((layers) {
+      if (mounted) setState(() => _available = layers.categories);
+    });
+  }
+
+  @override
+  void dispose() {
+    _filter.removeListener(_onFilterChanged);
+    super.dispose();
+  }
+
+  void _onFilterChanged() => setState(() {});
 
   List<CampusPlace> get _filteredPlaces {
-    if (_selectedCategory == null) return mockCampusPlaces;
+    if (_selected.isEmpty) return mockCampusPlaces;
     return mockCampusPlaces
-        .where((p) => p.category == _selectedCategory)
+        .where((p) => _selected.contains(p.category))
         .toList();
   }
 
   void _selectCategory(PlaceCategory? category) {
-    setState(() => _selectedCategory = category);
+    _filter.selectOnly(category);
     Navigator.of(context).pop();
+  }
+
+  String _title(AppLocalizations l10n) {
+    if (_selected.isEmpty) return l10n.appTitle;
+    if (_selected.length == 1) return categoryLabel(context, _selected.first);
+    return '${_selected.length} categorías';
   }
 
   @override
@@ -38,14 +69,10 @@ class _CampusHomePageState extends State<CampusHomePage> {
     final locale = context.watch<LocaleCubit>().state;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _selectedCategory == null
-              ? l10n.appTitle
-              : categoryLabel(context, _selectedCategory!),
-        ),
+        title: Text(_title(l10n)),
         actions: [
           IconButton(
-            tooltip: 'Modelo 3D de prueba',
+            tooltip: 'Modelo 3D',
             onPressed: () => context.push('/modelo-prueba'),
             icon: const Icon(Icons.view_in_ar, color: AppTheme.onPrimary),
           ),
@@ -63,7 +90,8 @@ class _CampusHomePageState extends State<CampusHomePage> {
         ],
       ),
       drawer: _CategoryDrawer(
-        selectedCategory: _selectedCategory,
+        selected: _selected,
+        available: _available,
         onSelect: _selectCategory,
       ),
       body: _filteredPlaces.isEmpty
@@ -85,11 +113,13 @@ class _CampusHomePageState extends State<CampusHomePage> {
 }
 
 class _CategoryDrawer extends StatelessWidget {
-  final PlaceCategory? selectedCategory;
+  final Set<PlaceCategory> selected;
+  final Set<String> available;
   final ValueChanged<PlaceCategory?> onSelect;
 
   const _CategoryDrawer({
-    required this.selectedCategory,
+    required this.selected,
+    required this.available,
     required this.onSelect,
   });
 
@@ -142,15 +172,17 @@ class _CategoryDrawer extends StatelessWidget {
                   _DrawerItem(
                     icon: Icons.apps_outlined,
                     label: l10n.allPlaces,
-                    selected: selectedCategory == null,
+                    selected: selected.isEmpty,
                     onTap: () => onSelect(null),
                   ),
                   const Divider(height: 1, color: Colors.white24),
-                  ...PlaceCategory.values.map(
+                  ...PlaceCategory.values
+                      .where((c) => available.isEmpty || available.contains(c.name))
+                      .map(
                     (category) => _DrawerItem(
                       icon: category.icon,
                       label: categoryLabel(context, category),
-                      selected: selectedCategory == category,
+                      selected: selected.contains(category),
                       onTap: () => onSelect(category),
                     ),
                   ),
