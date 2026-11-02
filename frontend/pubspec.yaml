@@ -21,7 +21,7 @@ dependencies:
 
   # Networking
   dio: ^5.7.0
-  supabase_flutter: ^2.5.6
+  supabase_flutter: ^2.18.3
 
   # State Management
   flutter_bloc: ^9.0.0
