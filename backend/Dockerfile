@@ -15,7 +15,7 @@
 # bug conocido de resolución DNS que cuelga peticiones salientes en ciertas
 # redes de nube.
 
-FROM node:22-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -25,7 +25,7 @@ COPY . .
 RUN npm run build \
   && npm prune --omit=dev
 
-FROM node:22-slim AS runtime
+FROM node:26-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN groupadd -r nodejs && useradd -r -g nodejs nestjs
