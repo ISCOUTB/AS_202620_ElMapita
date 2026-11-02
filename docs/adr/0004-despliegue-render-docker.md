@@ -2,7 +2,7 @@
 number: 0004
 date: 2026-09-27
 title: "Despliegue y Operación: Render + Contenedor Docker, IaC versionada y Señales Mínimas de Operación"
-status: Accepted
+status: "Superseded by ADR-0012"
 deciders: ["Diego Rosales Garza", "Rodrigo Vazquez Rico", "Angel Fabian Gutierrez Gomez"]
 technical-story: "Semana 8 exige una URL pública del sistema alcanzable fuera de la red UTB, infraestructura como código versionada, pipeline en verde que bloquee el merge, health check honesto, logs estructurados, una métrica consultable ligada a un escenario de calidad, evidencia de secretos fuera del código, y una estimación de costo mensual con supuestos explícitos."
 ---
@@ -45,18 +45,12 @@ El backend NestJS de El Mapita UTB nunca se ha desplegado fuera de `localhost`. 
 
 ### 1. Contenedor + IaC versionada
 
-- **`backend/Dockerfile`** — build multi-stage: `deps` (`npm ci`) → `build` (`npm run build` + `npm prune --omit=dev`) → `runtime` (solo `dist/`, `node_modules` de producción y `package.json`, usuario no-root). Verificado localmente: `docker build` + `docker run` exitosos, `/health` y `/metrics` responden correctamente **dentro del contenedor contra el proyecto real de Supabase**, no solo con datos falsos o en el Node local del equipo.
-- **Base `node:22-slim`, no `node:20-alpine` ni `node:20-slim`.** El deploy real en Render pasó por tres causas de fondo, encontradas una tras otra solo al desplegar de verdad (ninguna aparecía en local ni en CI, y las dos primeras eran reales pero no la causa final):
-  1. Esquema de Supabase vacío (el health check honesto marcó 503 correctamente) — resuelto con el DDL manual.
-  2. Se sospechó de `node:20-alpine` (Alpine usa `musl`, con un bug conocido de resolución DNS que cuelga peticiones salientes en redes de nube) y se cambió a `node:20-slim` — mejora real pero no resolvió el síntoma.
-  3. **Causa raíz definitiva**, encontrada instrumentando `/health` con logging de tiempos (ver sección 2): `@supabase/supabase-js` lanza `"Node.js detected but native WebSocket not found"` en cada consulta bajo Node 20 — no es el warning `EBADENGINE` de npm, es una excepción real en cada request, silenciosamente atrapada por nuestro propio `try/catch` y reportada como `503`, por lo que Render nunca veía un `200`. Se resolvió subiendo la imagen a `node:22-slim` (Node 22 trae `WebSocket` nativo). Verificado: mismo contenedor, mismas credenciales reales, `/health` responde `200` en ~1.2s (primera conexión) en vez de `503`/colgado.
+- **`backend/Dockerfile`** — build multi-stage (`node:20-alpine`, mismo Node que `ci.yml`): `deps` (`npm ci`) → `build` (`npm run build` + `npm prune --omit=dev`) → `runtime` (solo `dist/`, `node_modules` de producción y `package.json`, usuario no-root). Verificado localmente: `docker build` + `docker run` exitosos, `/health` y `/metrics` responden correctamente **corriendo en Node 20 dentro del contenedor**, no solo en el Node local del equipo.
 - **`render.yaml`** (raíz) — Blueprint de Render: un `web` service `runtime: docker` apuntando a ese Dockerfile, `healthCheckPath: /health`, `plan: free`. Los secretos (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `FRONTEND_URL`) se declaran con `sync: false` — Render pide su valor una sola vez en su dashboard, nunca se escriben en este archivo ni en git.
 
 ### 2. Health check honesto
 
 `HealthController.check()` ahora lanza `ServiceUnavailableException(checks)` cuando `supabase !== 'ok'`, en vez de devolver `200` con `"degraded"` en el cuerpo. Verificado: con `SUPABASE_URL` inválida, el endpoint responde **503** real (confirmado tanto en local como corriendo dentro del contenedor Docker). `render.yaml` usa este mismo path como `healthCheckPath`, así que Render deja de enviarle tráfico si el servicio se degrada de verdad — no solo si el proceso muere.
-
-Dos refuerzos agregados al diagnosticar el deploy real: (1) la consulta a Supabase corre contra un **timeout explícito de 4s** (`Promise.race`, con `clearTimeout` en el `finally` para no dejar temporizadores colgados) — el endpoint nunca se cuelga indefinidamente sin importar la causa, siempre responde rápido aunque sea con 503; (2) **logging explícito de tiempos** en cada paso (petición recibida, duración de la consulta, status final), independiente del autologging de pino-http (que excluye `/health` a propósito para no generar ruido) — esto fue lo que permitió encontrar la causa raíz real (sección "Decisión" arriba) en vez de seguir adivinando.
 
 ### 3. Logs estructurados
 
@@ -71,16 +65,13 @@ No se despliega Prometheus/Grafana — `curl <url>/metrics` devolviendo números
 ### 5. Secretos fuera del código
 
 - `render.yaml` declara los **nombres** de las env vars, no sus valores (`sync: false`).
-- Job `secrets` nuevo en `ci.yml`: CLI de `gitleaks` vía Docker (`zricethezav/gitleaks:latest detect`) sobre todo el historial. Se descartó el Action oficial `gitleaks/gitleaks-action@v2`: desde un cambio reciente del proveedor, exige una licencia paga (`GITLEAKS_LICENSE`); el binario `gitleaks` en sí sigue siendo MIT/gratuito, así que se invoca directo.
-- **La primera corrida encontró un hallazgo real** (no simulado): un parámetro de query con apariencia de credencial en el badge de CircleCI que trae por defecto la plantilla de `nest new`, en `backend/README.md` — apunta al repositorio oficial `nestjs/nest`, no a este proyecto, y la línea ni siquiera se usaba en el archivo. Se eliminó la línea y se agregó `.gitleaksignore` documentando el fingerprint histórico (el commit que lo introdujo sigue en el historial; el escaneo de historial completo seguiría marcándolo sin el allowlist explícito). Verificado: `no leaks found` tras el fix.
-  > Nota de redacción: este párrafo evita citar el valor textual del hallazgo a propósito — hacerlo dispara `generic-api-key` de nuevo sobre este mismo archivo (ya ocurrió una vez).
-- Verificación manual adicional: `git log --all --full-history -p -- backend/.env` no devuelve nada (el archivo nunca se commiteó, solo `.env.example` con placeholders).
+- Job `secrets` nuevo en `ci.yml`: `gitleaks/gitleaks-action@v2` sobre todo el historial, evidencia continua en cada run.
+- Verificación manual: `git log --all --full-history -p -- backend/.env` no devuelve nada (el archivo nunca se commiteó, solo `.env.example` con placeholders).
 
 ### 6. Pipeline: gate real + build de imagen
 
 - Job `docker` nuevo en `ci.yml`: construye `backend/Dockerfile` en cada push — si el Dockerfile se rompe, el pipeline lo detecta antes que Render.
 - **Branch protection en `main`**: regla que exige que `quality-gate` pase antes de aceptar cambios. Esto es "bloquee el merge ante fallos" literalmente. Cambia el flujo del equipo: hasta ahora se hacía push directo a `main` sin PR; de ahora en adelante el check debe pasar.
-- **Evidencia:** [run 36303969651](https://github.com/ISCOUTB/AS_202620_ElMapita/actions/runs/36303969651) — primer pipeline completo en verde del proyecto (7/7 jobs, incluido `Quality Gate`), tras dos iteraciones corrigiendo hallazgos reales de `gitleaks` (ver sección 5).
 
 ## RSK-05 (nuevo riesgo)
 
@@ -114,7 +105,7 @@ No se despliega Prometheus/Grafana — `curl <url>/metrics` devolviendo números
 | Compromiso | Mitigación |
 |---|---|
 | **Cold start en el plan free** | RSK-05, documentado arriba con punto de cruce explícito a plan pago. |
-| **El proyecto subió a Node 22 en CI/Docker a mitad de esta entrega** | No fue una decisión de antemano — se descubrió que era obligatorio (`@supabase/supabase-js` falla en tiempo de ejecución en Node <22, no solo advierte). `nestjs-pino` había quedado fijado en `4.6.1` para evitar justo este salto; con Node 22 ya no es necesario mantenerlo así, pero tampoco hace daño (funciona en cualquier Node ≥14). |
+| **`nestjs-pino` fijado en la serie 4.x, no la última (5.x)** | La 5.x exige Node ≥22.12; el proyecto usa Node 20 en CI/Docker. Revisar al momento de evaluar una migración de versión de Node de todo el proyecto (fuera de alcance aquí). |
 | **Branch protection cambia el flujo del equipo** | De ahora en adelante un push a `main` que rompa `quality-gate` no se refleja como aceptado sin intervención — el equipo debe esperar a que el check pase o abrir PR. Documentado en `correcciones.md`. |
 | **No hay Prometheus/Grafana desplegado** | Decisión de alcance explícita: `/metrics` crudo es evidencia suficiente para esta escala; se documenta como próximo paso natural si el proyecto creciera. |
 

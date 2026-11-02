@@ -830,3 +830,57 @@ Las entradas S10 anteriores a esta hablan del "ADR-0008" cuando se escribieron; 
 | 19 | Confirmar (commit) la salida de `.atl/` del índice y las reglas nuevas de `.gitignore` | Abierto: lo hace el responsable |
 | 17 | Traducir login, registro, lista de edificios, `MapPage` y ubicación manual cuando se conecten a la app | Abierto |
 | 18 | Limpiar los valores sin uso de `PlaceCategory` y sus textos de traducción | Abierto |
+
+## S11/S12 — 2026-11-02 — Modelado de amenazas, mitigaciones y correcciones de la matriz de cumplimiento
+
+Herramienta: Claude Code (modelo Claude Sonnet 5.5), con revisión y decisiones del responsable.
+
+### Prompts usados (resumidos)
+
+1. Plan de implementación del modelado de amenazas (STRIDE), cadena de suministro y privacidad sobre el repositorio real.
+2. Ejecutar los pasos del plan: DFD y tabla de amenazas, auditoría de dependencias, privacidad y mitigaciones de bajo costo.
+3. Pruebas para lo que señaló la revisión automática del cambio.
+4. Plan y ejecución de las correcciones de la matriz de cumplimiento (consistencia, ADR de reemplazo, secretos, autoría).
+
+### Qué se aceptó
+
+- Documentos en `docs/seguridad/` (DFD, 17 amenazas con evidencia `archivo:línea`, cadena de suministro, privacidad) y el ADR-0011.
+- `AuthGuard` + `@Roles` en el cambio de rol y el alta de POIs; el rol pasó a `app_metadata`; `redact` ampliado; job `deps-audit` y Dependabot.
+- 15 pruebas nuevas del guard, de la fuente del rol y del `redact`. Cada control se rompió a propósito y la prueba correspondiente falló.
+- Una prueba que reproduce la lectura rasgada del detalle de edificio y la sección "Verificación contra la implementación" de `docs/datos/consistencia-operaciones.md`.
+- ADR-0012 que reemplaza a ADR-0004 (se restauró su texto aceptado, solo cambia el `status`); consistencia, caché y mensajería en arc42 §8; DEC-09, DEC-10 y DEC-11; `.mailmap` con las cuentas de Rodrigo y Diego.
+- Escaneo de secretos de todo el historial con evidencia en `docs/seguridad/escaneo-secretos-historial.md`.
+
+### Qué se corrigió
+
+- La IA propuso primero un "paso 4" suponiendo que la ubicación salía del dispositivo (así lo planteó el usuario). Se verificó en el código y **no sale**: la sección de privacidad se escribió con lo verificado y T-16 bajó de prioridad.
+- `npm audit fix --omit=dev` borró las devDependencies de `node_modules` y rompió eslint y ts-node; se restauró con `npm ci`.
+- El primer escaneo de secretos devolvió "0 hallazgos" porque gitleaks abortó al leer archivos temporales de Word en el historial. No se aceptó ese resultado: se repitió commit por commit en un clon desechable y se separó el texto de los `.docx`.
+- Un segundo método (historial por tubería) dio 8 coincidencias; 3 eran líneas borradas que gitleaks no cuenta en modo git. Se comprobó antes de concluir que eran 5 hallazgos, todos ya en la allowlist.
+- Un comando con comillas invertidas mal escapadas dejó texto vacío en un documento; se detectó al releerlo y se reescribió.
+
+### Rechazos con motivo técnico
+
+- No se aplicaron las bajadas de versión que sugiere `npm audit` (`eslint` 4, `jest` 29): son retrocesos de versión mayor sin sentido.
+- No se reescribió el historial para quitar los `~$*.docx`: rompería los hashes citados en ADR y evidencias.
+- No se editó ADR-0004: un cambio posterior a un ADR aceptado va en un ADR nuevo.
+
+### Límites conocidos
+
+- Los 401 y 403 se probaron con Supabase simulado, no contra el real.
+- El rol ahora vive en `app_metadata`: hay que reasignar a los administradores en el panel de Supabase.
+- `multer` 2.4.0 queda en el rango vulnerable (< 2.5.0); no es alcanzable porque no hay subida de archivos.
+- Quedan sin mitigar T-04, T-05, T-06, T-08, T-09 y otras (ver `docs/seguridad/amenazas.md`).
+- gitleaks no pudo leer 4 commits con archivos de Word; las ramas `dependabot/*` no se escanearon localmente.
+- SonarCloud sigue no bloqueante: el token no tiene permiso "Execute Analysis" en la organización y lo debe conceder un administrador.
+- Autoría: tras unificar cuentas hay 46 commits de Angel, 7 de Rodrigo y 2 de Diego; ningún commit de código de Rodrigo ni de Diego. Eso no se puede resolver con documentación.
+
+### Pendientes derivados
+
+| # | Pendiente | Estado |
+|---|---|---|
+| 20 | Reasignar administradores con `app_metadata.role` en Supabase | Abierto: lo hace el responsable |
+| 21 | Pasar el cliente Flutter de `userMetadata` a `appMetadata` (`supabase_auth_client.dart`) | Abierto |
+| 22 | Regenerar `docs/c4/C4_L2_Container.png` desde el Mermaid corregido | Abierto |
+| 23 | Que un administrador de la organización conceda "Execute Analysis" a SonarCloud y volver el job bloqueante | Abierto: depende de un tercero |
+| 24 | Repartir las mitigaciones pendientes entre los tres integrantes, con commits propios | Abierto |

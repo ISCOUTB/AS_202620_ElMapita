@@ -14,10 +14,10 @@ Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Alma
 | 4 | URL firmada del `.glb` | `SupabaseModel3DStorage.getSignedUrl` | Storage + caché | **Inmutable por versión**; válida 1 h; cacheada 50 min | El TTL de caché es menor que la expiración para no entregar URLs a punto de caducar. |
 | 5 | Leer un POI | `GET /api/v1/pois/:id` · `GetPoiUseCase` | `pois` + caché | Read committed + **obsolescencia ≤ 5 min**; read-your-writes tras `CreatePoi` en la misma instancia | Ediciones hechas fuera de la API se ven tras ≤ 5 min. |
 | 6 | Listar POIs de un piso | `GET /api/v1/pois/floor/:id` · `ListPoisByFloorUseCase` | `pois` + caché | Igual que la fila 5 | Igual que la fila 5. |
-| 7 | **Crear POI** | `POST /api/v1/pois` · `CreatePoiUseCase` → `save` (upsert) | `pois` | **Atómica por fila (ACID de Postgres)**; **no idempotente** | El UUID lo genera el servidor en cada petición: reintentar tras un timeout duplica el POI. No hay llave de idempotencia. Además no actualiza `pisos.pois[]` (array desnormalizado). Sin guard de rol pese a ser "admin" en Swagger. Tras guardar publica `poi.created.v1` (al-menos-una-vez, no duradero; ver [ADR-0009](../adr/0009-mensajeria-asincrona-simulador-en-memoria.md)). |
+| 7 | **Crear POI** | `POST /api/v1/pois` · `CreatePoiUseCase` → `save` (upsert) | `pois` | **Atómica por fila (ACID de Postgres)**; **no idempotente** | El UUID lo genera el servidor en cada petición: reintentar tras un timeout duplica el POI. No hay llave de idempotencia. Además no actualiza `pisos.pois[]` (array desnormalizado). Exige `AuthGuard` con rol `admin_staff` o `admin_utb` (401 sin token, 403 sin rol). Tras guardar publica `poi.created.v1` (al-menos-una-vez, no duradero; ver [ADR-0009](../adr/0009-mensajeria-asincrona-simulador-en-memoria.md)). |
 | 8 | Subir modelo 3D | `SupabaseModel3DStorage.uploadModel` (sin endpoint) | Storage | `upsert: false` (cambiado en esta entrega; antes `true`): **no sobrescribe** una versión publicada | Preserva la inmutabilidad por versión: subir de nuevo la misma versión falla en vez de dejar a los clientes con la v1 en caché sin ver el cambio. Para cambiar un modelo hay que publicar una versión nueva. |
 | 9 | Auth: sign-in / sign-up / refresh / sign-out | `AuthController` → Supabase Auth | `auth.users` | **Fuerte**, delegada a Supabase Auth. **Nunca se cachea** | Dependencia total de un tercero (ver ADR-0010). |
-| 10 | Cambiar rol de usuario | `POST /api/v1/auth/users/:id/role` | `auth.users.user_metadata` | Fuerte en el servidor; **eventual en el cliente** hasta que se refresque el JWT | Un rol revocado sigue vigente hasta que expire el token vigente. |
+| 10 | Cambiar rol de usuario | `POST /api/v1/auth/users/:id/role` | `auth.users.app_metadata` | Fuerte en el servidor; **eventual en el cliente** hasta que se refresque el JWT. El backend relee el rol de Supabase en cada petición protegida (`AuthGuard`), no del token | Un rol revocado sigue vigente en la app hasta que expire el token vigente, pero el backend lo deja de aceptar de inmediato. El rol vive en `app_metadata` porque `user_metadata` lo edita el propio usuario ([ADR-0011](../adr/0011-modelado-de-amenazas-y-mitigaciones.md)). |
 | 11 | Ubicación actual / manual | `GET /location/current`, `POST /location/manual` | Ninguno | No aplica (sin persistencia) | `manual` solo devuelve lo recibido. |
 | 12 | Caché local del `.glb` (app) | `ModelCache`, `LocalStorage` | Disco + Hive | **Inmutable por versión**; sin TTL; la versión anterior se borra al bajar la nueva | Si la descarga de la versión nueva falla, se conserva la anterior (uso sin red). |
 | 13 | Caché local de metadatos (app) | — | — | **No existe**: `LoadBuildingUseCase` consulta la API primero | Sin red, la app cae en `MapasError` (EC-04, 0/20). Es trabajo siguiente. |
@@ -28,3 +28,20 @@ Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Alma
 - **Fallos de BD:** desde esta entrega un fallo real de Postgres se propaga como **503** y nunca se confunde con "no encontrado" ni con una lista vacía (antes los repositorios devolvían `null`/`[]`). Esto es lo que permite cachear con seguridad: ni los errores ni los vacíos entran a la caché.
 - **RLS:** el backend usa la *service-role key*, que la omite. La seguridad de acceso depende del backend, no de Postgres.
 - **Escalado:** una sola instancia (Render plan free). La caché es local; con más instancias la fila 5–6 pasaría a obsolescencia ≤ TTL entre instancias, sin read-your-writes global (ver [diseno-cache.md](diseno-cache.md#cuándo-pasar-a-redis)).
+
+## Verificación contra la implementación
+
+Dos operaciones contrastadas línea por línea con el código. No se presume consistencia fuerte por usar PostgreSQL.
+
+**Operación 2 — Detalle de edificio (lecturas separadas, sin transacción).**
+
+- `GetBuildingUseCase.execute` (`backend/src/modules/mapas/application/use-cases.ts:62-87`) hace tres pasos independientes: `buildingRepository.findById` (:67), `floorRepository.findByBuildingId` (:77) y `getSignedUrl` (:79-84).
+- En Postgres son dos consultas distintas: `edificios` por `id` (`supabase-repositories.ts:50-61`) y `pisos` por `edificio_id` (`supabase-repositories.ts:124-137`). No comparten transacción ni snapshot.
+- Garantía real: *read committed* por consulta. Una escritura entre ambas produce una lectura rasgada (edificio viejo con pisos nuevos).
+- La prueba `backend/src/modules/mapas/application/get-building.use-case.spec.ts` reproduce esa lectura rasgada y fija la mitigación: la URL firmada se calcula con la versión del edificio leído, no con la de los pisos.
+
+**Operación 7 — Crear POI (una fila atómica, sin idempotencia).**
+
+- `CreatePoiUseCase.execute` (`backend/src/modules/pois/application/use-cases.ts:101-113`) genera el UUID con `crypto.randomUUID()` en cada petición y llama `poiRepository.save`.
+- `save` es un único `upsert` sobre `pois` (`supabase-poi-repository.ts:94-111`): atómico por fila (ACID de Postgres), sin transacción que lo agrupe con la invalidación de caché ni con la publicación de `poi.created.v1`.
+- Garantía real: atómica por fila, **no idempotente** (un reintento tras un timeout crea otro POI) y *read-your-writes* solo en la misma instancia, porque la invalidación (`cache.del`, :110-111) es local.
