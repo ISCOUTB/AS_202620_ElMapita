@@ -89,6 +89,10 @@ frontend/lib/
 | **Operación → consistencia** | `docs/datos/consistencia-operaciones.md` | Garantía de consistencia de cada operación de lectura/escritura y sus riesgos |
 | **Diseño de caché** | `docs/datos/diseno-cache.md` | Caché de servidor y cliente: claves, TTL y política de invalidación |
 | **ADR-0010: Fuente de verdad de datos** | `docs/adr/0010-postgresql-postgis-fuente-de-verdad.md` | PostgreSQL/Supabase: alternativas y por qué es la decisión más costosa de revertir |
+| **Seguridad: amenazas (S11)** | `docs/seguridad/amenazas.md` ([DFD](docs/seguridad/dfd.md)) | Tabla STRIDE priorizada con mitigación, verificación y responsable |
+| **Seguridad: cadena de suministro** | `docs/seguridad/cadena-suministro.md` | Resultado de `npm audit` y `dart pub outdated`, con evaluación de alcance real |
+| **Seguridad: privacidad** | `docs/seguridad/privacidad.md` | Inventario de datos personales, terceros y decisiones de minimización |
+| **ADR-0011: Modelado de amenazas** | `docs/adr/0011-modelado-de-amenazas-y-mitigaciones.md` | Decisiones de mitigación y estado de cada amenaza |
 | **Mensajería asíncrona** | `docs/mensajeria/contrato-mensajes.md` | Contrato del evento, garantía al-menos-una-vez, idempotencia, reintentos/DLQ, pruebas y trazabilidad |
 | **ADR-0009: Mensajería asíncrona** | `docs/adr/0009-mensajeria-asincrona-simulador-en-memoria.md` | Simulador en memoria frente a llamada síncrona y a un broker real |
 

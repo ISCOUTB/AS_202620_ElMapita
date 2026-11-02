@@ -148,6 +148,32 @@ jobs:
             zricethezav/gitleaks:latest detect --source="/repo" --verbose --redact
 
   # ==========================================================
+  # Dependencias - auditoría de cadena de suministro (S11, T-13)
+  # Bloquea en severidad crítica de producción. Los hallazgos altos se listan
+  # pero no bloquean mientras existan excepciones documentadas en
+  # docs/seguridad/cadena-suministro.md (multer: sin subida de archivos).
+  # ==========================================================
+  deps-audit:
+    name: Dependencias (npm audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Listado de hallazgos de producción
+        run: npm audit --omit=dev || true
+
+      - name: Bloquear críticos de producción
+        run: npm audit --omit=dev --audit-level=critical
+
+  # ==========================================================
   # Docker - construye la imagen del backend (infraestructura como código)
   # Mismo Dockerfile que usa Render vía render.yaml (ADR-0004)
   # ==========================================================
@@ -289,7 +315,7 @@ jobs:
   quality-gate:
     name: Quality Gate (EC-01..EC-04)
     runs-on: ubuntu-latest
-    needs: [backend, frontend, docs, contract, secrets, docker, sonarcloud]
+    needs: [backend, frontend, docs, contract, secrets, deps-audit, docker, sonarcloud]
     if: always()
     steps:
       - uses: actions/checkout@v4
@@ -303,7 +329,7 @@ jobs:
           echo "Secrets: ${{ needs.secrets.result }}"
           echo "Docker: ${{ needs.docker.result }}"
           echo "SonarCloud: ${{ needs.sonarcloud.result }}"
-          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" || "${{ needs.docs.result }}" == "failure" || "${{ needs.contract.result }}" == "failure" || "${{ needs.secrets.result }}" == "failure" || "${{ needs.docker.result }}" == "failure" ]]; then
+          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.frontend.result }}" == "failure" || "${{ needs.docs.result }}" == "failure" || "${{ needs.contract.result }}" == "failure" || "${{ needs.secrets.result }}" == "failure" || "${{ needs.deps-audit.result }}" == "failure" || "${{ needs.docker.result }}" == "failure" ]]; then
             echo "Uno o más jobs falló"
             exit 1
           fi

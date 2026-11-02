@@ -5,8 +5,16 @@ import {
   Param,
   Body,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard, Roles } from '../../auth/interfaces/auth.guard';
 import {
   GetPoiUseCase,
   ListPoisByFloorUseCase,
@@ -41,9 +49,14 @@ export class PoisController {
   }
 
   @Post()
+  @UseGuards(AuthGuard)
+  @Roles('admin_staff', 'admin_utb')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear nuevo POI (admin)' })
   @ApiResponse({ status: 201, description: 'POI creado' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'Token ausente o inválido' })
+  @ApiResponse({ status: 403, description: 'No autorizado' })
   async create(@Body() input: CreatePoiInput) {
     return this.createPoiUseCase.execute(input);
   }

@@ -27,6 +27,7 @@ import { SupabaseAuthClientImpl } from './infrastructure/supabase/supabase-auth-
     },
   ],
   exports: [
+    'SupabaseAuthClient',
     SignInUseCase,
     SignUpUseCase,
     RefreshTokenUseCase,

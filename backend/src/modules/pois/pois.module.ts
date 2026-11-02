@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '../../shared/config/config.module';
+import { AuthModule } from '../auth/auth.module';
 import { PoisController } from './interfaces/pois.controller';
 import {
   GetPoiUseCase,
@@ -11,7 +12,7 @@ import { PoiAuditReconciler } from './application/poi-audit.reconciler';
 import { SupabasePoiRepository } from './infrastructure/supabase-poi-repository';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, AuthModule],
   controllers: [PoisController],
   providers: [
     GetPoiUseCase,

@@ -15,7 +15,14 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
         autoLogging: {
           ignore: (req) => req.url === '/health' || req.url === '/metrics',
         },
-        redact: ['req.headers.authorization'],
+        // S11 (T-11): no dejar en los logs credenciales ni datos personales.
+        redact: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers["x-forwarded-for"]',
+          'req.remoteAddress',
+          'res.headers["set-cookie"]',
+        ],
       },
     }),
   ],

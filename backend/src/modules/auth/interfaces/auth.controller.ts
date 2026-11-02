@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Request,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard, Roles } from './auth.guard';
 import type { Request as ExpressRequest } from 'express';
 import {
   ApiTags,
@@ -85,11 +95,17 @@ export class AuthController {
   }
 
   @Post('users/:userId/role')
+  @UseGuards(AuthGuard)
+  @Roles('admin_utb')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar rol de usuario (solo admin)' })
   @ApiResponse({ status: 200, description: 'Rol actualizado' })
+  @ApiResponse({ status: 401, description: 'Token ausente o inválido' })
   @ApiResponse({ status: 403, description: 'No autorizado' })
-  async updateUserRole(@Body() input: UpdateUserRoleInput) {
-    return this.updateUserRoleUseCase.execute(input);
+  async updateUserRole(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() input: UpdateUserRoleInput,
+  ) {
+    return this.updateUserRoleUseCase.execute({ ...input, userId });
   }
 }

@@ -91,7 +91,9 @@ export class SupabaseAuthClientImpl implements SupabaseAuthClient {
 
   async updateUserRole(userId: string, role: UserRole): Promise<void> {
     const { error } = await this.client.auth.admin.updateUserById(userId, {
-      user_metadata: { role },
+      // app_metadata solo lo escribe la service key; user_metadata lo edita el
+      // propio usuario (S11, T-02).
+      app_metadata: { role },
     });
 
     if (error) {
@@ -100,14 +102,12 @@ export class SupabaseAuthClientImpl implements SupabaseAuthClient {
   }
 
   private mapToUser(supabaseUser: SupabaseUser): User {
-    const metadata = supabaseUser.user_metadata as {
-      role?: UserRole;
-      nombre?: string;
-    };
+    const metadata = supabaseUser.user_metadata as { nombre?: string };
+    const appMetadata = supabaseUser.app_metadata as { role?: UserRole };
     return {
       id: supabaseUser.id as UserId,
       email: supabaseUser.email!,
-      role: metadata?.role || 'estudiante',
+      role: appMetadata?.role || 'estudiante',
       nombre: metadata?.nombre || supabaseUser.email!,
       activo: true,
       createdAt: new Date(supabaseUser.created_at),
