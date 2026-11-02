@@ -14,7 +14,7 @@ C4Container
 
     System_Boundary(c1, "El Mapita UTB") {
         Container(mobileApp, "App Móvil Flutter", "Dart, Flutter 3.19, BLoC, get_it, Dio, Hive, SecureStorage", "Renderiza .glb Draco, gestiona pisos/POIs, geoloc accuracy≤15m + fallback 10s→2s (EC-03), caché Hive+Filesystem <5s (EC-04).")
-        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node18+", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/v1/*, RBAC JWT.")
+        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node 22", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/v1/*, Autorización por rol (AuthGuard) solo en cambio de rol y alta de POIs; el resto de las lecturas es público (ver docs/seguridad/amenazas.md).")
         ContainerDb(localCacheMeta, "Caché Local Metadatos", "Hive (key-value Dart)", "Edificios/pisos/POIs + versiones semver. Offline <5s EC-04.")
         ContainerDb(localCacheModels, "Caché Local Modelos 3D", "Filesystem (path_provider)", "Binarios .glb por edificio/piso indexados por versionModelo3D. EC-01 <5s p95.")
     }
@@ -53,7 +53,7 @@ C4Container
 | Backend API | Container (servidor) | NestJS 11, Swagger, Joi, Docker | `modules/mapas/pois/auth/ubicacion` + `HealthController /health` + `shared/kernel` | S4 tácticas |
 | Caché Local Metadatos | ContainerDb | Hive | POIs/edificios/pisos versionados semver | EC-04 <5s offline |
 | Caché Local Modelos 3D | ContainerDb | Filesystem | `.glb` Draco por `versionModelo3D` | EC-01 <5s p95 |
-| Supabase Auth | Container (externo) | GoTrue | JWT, roles `estudiante/visitante/docente/admin_staff/admin_utb` | S3.2 Media |
+| Supabase Auth | Container (externo) | GoTrue | JWT, roles `estudiante/visitante/docente/admin_staff/admin_utb` guardados en `app_metadata` (no editable por el usuario) | S3.2 Media |
 | Supabase DB | ContainerDb (externo) | PostgreSQL 15 + PostGIS | Building Polygon, Floor, Poi Point | S3.2 Alta |
 | Supabase Storage | Container (externo) | S3 bucket `modelos-3d` | Artefactos 3D firmados | S3.2 Alta |
 | Supabase Realtime | Container (externo) | WSS | Invalidación caché, cambios POIs | S3.2 Baja/Media |

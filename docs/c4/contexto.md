@@ -106,7 +106,7 @@ C4Container
 
     System_Boundary(c1, "El Mapita UTB") {
         Container(mobileApp, "App Móvil Flutter", "Dart, Flutter 3.19, BLoC, get_it, Dio, Hive, SecureStorage", "Renderiza .glb Draco, gestiona pisos/POIs, geoloc accuracy≤15m + fallback 10s→2s (EC-03), caché Hive+Filesystem (EC-04).")
-        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node18+", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/*, RBAC JWT.")
+        Container(backendApi, "Backend API", "NestJS 11, TypeScript, Swagger/OpenAPI, Joi, Docker Node 22", "Monolito Modular: módulos mapas/ubicación/auth/pois, valida versiones modelos, expone REST /api/*, Autorización por rol (AuthGuard) solo en cambio de rol y alta de POIs; el resto de las lecturas es público (ver docs/seguridad/amenazas.md).")
         ContainerDb(localCacheMeta, "Caché Local Metadatos", "Hive (key-value Dart)", "Edificios/pisos/POIs + versiones semver. Offline <5s EC-04.")
         ContainerDb(localCacheModels, "Caché Local Modelos 3D", "Filesystem (path_provider)", "Binarios .glb por edificio/piso indexados por versionModelo3D.")
     }

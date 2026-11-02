@@ -39,14 +39,14 @@ El análisis (`docs/seguridad/`) encontró que la documentación afirmaba contro
 
 | ID | Estado | Evidencia |
 |----|--------|-----------|
-| T-01, T-03 | Mitigadas | `auth.guard.spec.ts` (5 pruebas), `auth.controller.ts`, `pois.controller.ts` |
-| T-02 | Mitigada en backend, pendiente la migración de datos y el cliente Flutter | `supabase-auth-client.ts` |
-| T-11 | Mitigada | `redact` ampliado en `logger.module.ts` |
+| T-01, T-03 | Mitigadas | `auth.guard.spec.ts` (6 pruebas) y `guarded-endpoints.spec.ts` (9 pruebas HTTP: 401, 403, 2xx) |
+| T-02 | Mitigada en backend, pendiente la migración de datos y el cliente Flutter | `supabase-auth-client.spec.ts` (lee y escribe en `app_metadata`, ignora `user_metadata`) |
+| T-11 | Mitigada | `logger.module.spec.ts` comprueba que authorization, cookie, IP y set-cookie no salen en el log |
 | T-13 | Parcial | `deps-audit` y Dependabot añadidos; falta fijar imagen por digest |
 | Críticas de dependencias | Cerradas | `proxy-addr` 2.0.8; ver `docs/evidencia/s11-npm-audit-prod-despues.json` |
 | T-04, T-05, T-06, T-07, T-08, T-09, T-10, T-12, T-15 | Pendientes | Plan en `amenazas.md` |
 
 ## Verificación
 
-- Backend: 61 pruebas unitarias en verde, `eslint` sin errores, `nest build`, `openapi:drift` sin deriva y 17 pruebas de contrato en verde.
+- Backend: 76 pruebas en verde (15 nuevas; cada control se rompió a propósito y la prueba correspondiente falló), `eslint` sin errores, `nest build`, `openapi:drift` sin deriva y 17 pruebas de contrato en verde.
 - Dependencias de producción: de 8 hallazgos (1 crítico) a 4 (0 críticos). Quedan `multer`, `@nestjs/platform-express`, `js-yaml` y `@nestjs/swagger`. `multer` no es alcanzable: no hay subida de archivos.

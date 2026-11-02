@@ -7,20 +7,28 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard, Roles } from './auth.guard';
 import type { User, UserRole } from '../domain';
 
+/**
+ * Contexto con los roles declarados donde los declaran los controladores
+ * reales (en el método); `onClass` los pone en la clase.
+ */
 function contextFor(
   authorization: string | undefined,
   roles: UserRole[] | undefined,
+  onClass = false,
 ): ExecutionContext {
   const handler = () => undefined;
-  @Roles(...(roles ?? []))
-  class Handler {}
+  class Controller {}
+  if (roles) {
+    if (onClass) Roles(...roles)(Controller);
+    else Roles(...roles)({}, 'handle', { value: handler });
+  }
   const request: { headers: Record<string, string>; user?: User } = {
     headers: authorization ? { authorization } : {},
   };
   return {
     switchToHttp: () => ({ getRequest: () => request }),
     getHandler: () => handler,
-    getClass: () => Handler,
+    getClass: () => Controller,
   } as unknown as ExecutionContext;
 }
 
@@ -68,5 +76,12 @@ describe('AuthGuard', () => {
     await expect(
       guard.canActivate(contextFor('Bearer ok', undefined)),
     ).resolves.toBe(true);
+  });
+
+  it('lee los roles declarados en la clase cuando el método no declara ninguno', async () => {
+    const { guard } = guardWith({ id: 'u1' as never, role: 'estudiante' });
+    await expect(
+      guard.canActivate(contextFor('Bearer ok', ['admin_utb'], true)),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });
