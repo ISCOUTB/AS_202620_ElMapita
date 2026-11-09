@@ -24,6 +24,7 @@ void main() {
       loadBuildingUseCase: LoadBuildingUseCase(
         api: InMemoryMapasApi(),
         cache: ModelCache(storage),
+        storage: storage,
       ),
     );
     await tester.pumpWidget(MaterialApp(
@@ -52,6 +53,7 @@ void main() {
         loadBuildingUseCase: LoadBuildingUseCase(
           api: offlineApi(),
           cache: ModelCache(storage),
+          storage: storage,
         ),
       );
       final sw = Stopwatch()..start();

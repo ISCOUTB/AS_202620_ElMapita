@@ -1,6 +1,8 @@
 // Local storage using Hive and SharedPreferences
 // lib/core/storage/local_storage.dart
 
+import 'dart:convert';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,13 +13,21 @@ class LocalStorage {
   late Box _box;
   late SharedPreferences _prefs;
   bool _initialized = false;
+  final Future<String> Function()? _hivePath;
+
+  /// [hivePath] permite a las pruebas usar un directorio propio sin plugins.
+  LocalStorage({Future<String> Function()? hivePath}) : _hivePath = hivePath;
 
   Future<void> init() async {
     if (_initialized) return;
-    
-    final appDocDir = await getApplicationDocumentsDirectory();
-    await Hive.initFlutter(path.join(appDocDir.path, 'hive'));
-    
+
+    if (_hivePath != null) {
+      Hive.init(await _hivePath());
+    } else {
+      final appDocDir = await getApplicationDocumentsDirectory();
+      await Hive.initFlutter(path.join(appDocDir.path, 'hive'));
+    }
+
     _box = await Hive.openBox(_boxName);
     _prefs = await SharedPreferences.getInstance();
     _initialized = true;
@@ -65,6 +75,23 @@ class LocalStorage {
     return _prefs.getInt(key);
   }
 
+  // Metadatos de edificio (payload de la API) para uso sin red
+  Future<void> cacheBuildingPayload(
+      String buildingId, Map<String, dynamic> payload) async {
+    await put('building_meta_$buildingId', jsonEncode(payload));
+  }
+
+  /// Último payload guardado o null si no existe o está dañado.
+  Map<String, dynamic>? getCachedBuildingPayload(String buildingId) {
+    final raw = get('building_meta_$buildingId');
+    if (raw is! String) return null;
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Model 3D cache specific
   Future<void> cacheModel(String buildingId, String version, String localPath) async {
     await put('model_${buildingId}_$version', localPath);
@@ -76,13 +103,13 @@ class LocalStorage {
   }
 
   String? getCachedModelVersion(String buildingId) {
-    return getString('model__version');
+    return getString('model_${buildingId}_version');
   }
 
   /// Versiones en caché de un edificio -> ruta local del .glb.
   /// El id de edificio es un UUID (sin '_'), por lo que el prefijo no es ambiguo.
   Map<String, String> getCachedModelsOf(String buildingId) {
-    final prefix = 'model__';
+    final prefix = 'model_${buildingId}_';
     final result = <String, String>{};
     for (final key in _box.keys) {
       if (key is String && key.startsWith(prefix)) {
@@ -106,9 +133,9 @@ class LocalStorage {
   }
 
   Future<void> removeCachedModel(String buildingId, String version) async {
-    await delete('model__');
+    await delete('model_${buildingId}_$version');
     if (getCachedModelVersion(buildingId) == version) {
-      await _prefs.remove('model__version');
+      await _prefs.remove('model_${buildingId}_version');
     }
   }
 }

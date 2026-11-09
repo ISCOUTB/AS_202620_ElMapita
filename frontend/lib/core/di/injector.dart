@@ -55,6 +55,7 @@ Future<void> setupDependencies() async {
   getIt.registerFactory<LoadBuildingUseCase>(() => LoadBuildingUseCase(
     api: getIt<MapasApi>(),
     cache: getIt<ModelCache>(),
+    storage: getIt<LocalStorage>(),
   ));
   getIt.registerFactory<MapasBloc>(() => MapasBloc(
     loadBuildingUseCase: getIt<LoadBuildingUseCase>(),

@@ -150,5 +150,28 @@ describe('Endpoints protegidos (S11, T-01/T-03)', () => {
         .expect(201);
       expect(createPoi).toHaveBeenCalledWith(body);
     });
+
+    it('con Idempotency-Key pasa la llave y el usuario autenticado al caso de uso', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/pois')
+        .set('Authorization', 'Bearer tok-staff')
+        .set('Idempotency-Key', 'k-123')
+        .send(body)
+        .expect(201);
+      expect(createPoi).toHaveBeenCalledWith(body, {
+        idempotencyKey: 'k-123',
+        actorId: 'u-staff',
+      });
+    });
+
+    it('400 con una Idempotency-Key de más de 128 caracteres y no crea el POI', async () => {
+      await request(app.getHttpServer())
+        .post('/v1/pois')
+        .set('Authorization', 'Bearer tok-staff')
+        .set('Idempotency-Key', 'x'.repeat(129))
+        .send(body)
+        .expect(400);
+      expect(createPoi).not.toHaveBeenCalled();
+    });
   });
 });

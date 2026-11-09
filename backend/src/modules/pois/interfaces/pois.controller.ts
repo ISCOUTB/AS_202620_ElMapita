@@ -6,6 +6,9 @@ import {
   Body,
   ParseUUIDPipe,
   UseGuards,
+  Headers,
+  Req,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,6 +16,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBearerAuth,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { AuthGuard, Roles } from '../../auth/interfaces/auth.guard';
 import {
@@ -20,6 +24,9 @@ import {
   ListPoisByFloorUseCase,
   CreatePoiUseCase,
 } from '../application/use-cases';
+import type { Request } from 'express';
+import type { User } from '../../auth/domain';
+import { IDEMPOTENCY_KEY_MAX_LENGTH } from '../application/idempotency';
 import type { CreatePoiInput, FloorId, PoiId } from '../domain';
 
 @ApiTags('POIs')
@@ -57,7 +64,35 @@ export class PoisController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 401, description: 'Token ausente o inválido' })
   @ApiResponse({ status: 403, description: 'No autorizado' })
-  async create(@Body() input: CreatePoiInput) {
-    return this.createPoiUseCase.execute(input);
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: false,
+    description:
+      'Opcional (máx. 128 caracteres). Reintentar con la misma llave no duplica el POI.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Idempotency-Key reutilizada con un cuerpo distinto',
+  })
+  async create(
+    @Body() input: CreatePoiInput,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() req: Request & { user?: User },
+  ) {
+    if (idempotencyKey === undefined) {
+      return this.createPoiUseCase.execute(input);
+    }
+    if (
+      idempotencyKey.length === 0 ||
+      idempotencyKey.length > IDEMPOTENCY_KEY_MAX_LENGTH
+    ) {
+      throw new BadRequestException(
+        `Idempotency-Key debe tener entre 1 y ${IDEMPOTENCY_KEY_MAX_LENGTH} caracteres`,
+      );
+    }
+    return this.createPoiUseCase.execute(input, {
+      idempotencyKey,
+      actorId: req.user?.id ?? '',
+    });
   }
 }

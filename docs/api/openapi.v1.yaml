@@ -354,6 +354,18 @@ paths:
       tags: [POIs]
       operationId: createPoi
       summary: Crear nuevo POI (admin)
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          description: >-
+            Opcional (1 a 128 caracteres). Reintentar con la misma llave y el
+            mismo cuerpo devuelve el POI ya creado sin duplicarlo; la llave
+            vale por usuario. Sin llave, cada petición crea un POI nuevo.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
       requestBody:
         required: true
         content:
@@ -381,6 +393,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
           description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Idempotency-Key reutilizada con un cuerpo distinto
           content:
             application/json:
               schema:

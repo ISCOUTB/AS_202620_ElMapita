@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import {
   CreatePoiUseCase,
   GetPoiUseCase,
@@ -83,5 +83,57 @@ describe('POIs con caché', () => {
     await expect(uc.execute({ floorId: pisoId })).resolves.toEqual({
       pois: [],
     });
+  });
+});
+
+describe('CreatePoi con llave de idempotencia', () => {
+  function setup() {
+    const { repo, asRepo } = fakeRepo();
+    const bus = new InMemoryMessageBus();
+    const publish = jest.spyOn(bus, 'publish');
+    const create = new CreatePoiUseCase(asRepo, new InMemoryTtlCache(), bus);
+    return { repo, publish, create };
+  }
+  const key = { idempotencyKey: 'k-1', actorId: 'u-staff' };
+
+  it('sin llave conserva el comportamiento previo: cada petición crea un POI', async () => {
+    const { repo, create } = setup();
+    const a = await create.execute(input);
+    const b = await create.execute(input);
+    expect(a.poi.id).not.toBe(b.poi.id);
+    expect(repo.save).toHaveBeenCalledTimes(2);
+  });
+
+  it('el reintento con la misma llave devuelve el mismo POI sin duplicar ni republicar', async () => {
+    const { repo, publish, create } = setup();
+    const first = await create.execute(input, key);
+    const retry = await create.execute(input, key);
+    expect(retry.poi.id).toBe(first.poi.id);
+    expect(repo.save).toHaveBeenCalledTimes(1);
+    expect(publish).toHaveBeenCalledTimes(1);
+  });
+
+  it('la misma llave de otro usuario crea otro POI', async () => {
+    const { create } = setup();
+    const a = await create.execute(input, key);
+    const b = await create.execute(input, { ...key, actorId: 'u-admin' });
+    expect(b.poi.id).not.toBe(a.poi.id);
+  });
+
+  it('la misma llave con un cuerpo distinto responde 409 y no guarda', async () => {
+    const { repo, create } = setup();
+    await create.execute(input, key);
+    await expect(
+      create.execute({ ...input, nombre: 'Otra aula' }, key),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(repo.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('el id derivado de la llave es un UUID estable', async () => {
+    const { create } = setup();
+    const { poi } = await create.execute(input, key);
+    expect(poi.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
   });
 });

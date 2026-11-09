@@ -24,6 +24,7 @@ void main() {
       loadBuildingUseCase: LoadBuildingUseCase(
         api: InMemoryMapasApi(),
         cache: ModelCache(storage),
+        storage: storage,
       ),
     );
     final timings = <FrameTiming>[];

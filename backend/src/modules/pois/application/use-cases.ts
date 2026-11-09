@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { UseCase } from '../../../shared/kernel';
 import { CACHE_PORT, type CachePort } from '../../../shared/cache/cache.port';
 import { getOrLoad } from '../../../shared/cache/get-or-load';
@@ -8,6 +14,7 @@ import {
 } from '../../../shared/messaging/message-bus.port';
 import { newMessage } from '../../../shared/messaging/message';
 import { POI_CREATED_V1, type PoiCreatedV1 } from './poi-events';
+import { idempotentPoiId, type IdempotencyContext } from './idempotency';
 import type {
   Poi,
   PoiId,
@@ -98,9 +105,31 @@ export class CreatePoiUseCase implements UseCase<
 
   private readonly logger = new Logger(CreatePoiUseCase.name);
 
-  async execute(input: CreatePoiInput): Promise<CreatePoiOutput> {
+  async execute(
+    input: CreatePoiInput,
+    idempotency?: IdempotencyContext,
+  ): Promise<CreatePoiOutput> {
+    if (idempotency) {
+      const id = idempotentPoiId(idempotency) as PoiId;
+      const existing = await this.poiRepository.findById(id);
+      if (existing) {
+        // Reintento: se responde con lo ya creado, sin guardar ni publicar de nuevo.
+        if (
+          existing.pisoId !== input.pisoId ||
+          existing.tipo !== input.tipo ||
+          existing.nombre !== input.nombre
+        ) {
+          throw new ConflictException(
+            'La Idempotency-Key ya se usó con un cuerpo distinto',
+          );
+        }
+        return { poi: existing };
+      }
+    }
     const poi: Poi = {
-      id: crypto.randomUUID() as PoiId,
+      id: (idempotency
+        ? idempotentPoiId(idempotency)
+        : crypto.randomUUID()) as PoiId,
       ...input,
       createdAt: new Date(),
       updatedAt: new Date(),

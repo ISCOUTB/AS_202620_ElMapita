@@ -715,12 +715,12 @@ El pendiente 4 de la sección "Pendientes y límites de S10" (taller de mensajer
 | # | Pendiente | Estado |
 |---|---|---|
 | 1 | Exportar el esquema de Supabase a `backend/supabase/schema.sql` (`supabase db dump --schema public`) | Abierto: requiere credenciales del responsable |
-| 2 | Caché de metadatos en la app (EC-04 sigue en 0/20) | Abierto |
-| 3 | `Idempotency-Key` HTTP en `POST /api/v1/pois` (cambia el contrato OpenAPI) | Abierto |
+| 2 | Caché de metadatos en la app (EC-04 sigue en 0/20) | **Resuelto** (2026-11-09): la app usa la copia local con banner «Offline»; EC-04 sigue sin medirse en dispositivo |
+| 3 | `Idempotency-Key` HTTP en `POST /api/v1/pois` (cambia el contrato OpenAPI) | **Resuelto** (2026-11-09): cabecera opcional, id derivado de usuario y llave, 409 si el cuerpo difiere; contrato OpenAPI actualizado (sin deriva) |
 | 4 | Taller de mensajería | **Resuelto** |
-| 5 | Guard de rol en `POST /api/v1/pois` | Abierto |
+| 5 | Guard de rol en `POST /api/v1/pois` | **Resuelto** (ya implementado en S11: `AuthGuard` + `@Roles('admin_staff','admin_utb')`, con pruebas 401/403/201) |
 | 6 | Arrays desnormalizados `edificios.pisos` y `pisos.pois` | Abierto |
-| 7 | `GetFloorModel` firma con `edificioId` (modelo por edificio, no por piso) | Abierto |
+| 7 | `GetFloorModel` firma con `edificioId` (modelo por edificio, no por piso) | No realizado: falta la información del interior de los edificios; documentado como deuda en arc42 §11 (RSK-09) |
 | 8 | PR hacia `main` de `s10/datos-intensivos-cache` y `s10/taller-mensajeria` | Abierto |
 | 9 | Confirmar (commit) y subir (push) los cambios de la reconciliación | Abierto: lo hace el responsable |
 | 10 | `test:e2e` roto antes y después de estos cambios (espera `GET /` = 200) y errores de tipos preexistentes en `openapi.contract-spec.ts` | Abierto, sin relación con S10 |

@@ -49,14 +49,16 @@ class BuildingLoaded extends MapasState {
   final Floor currentFloor;
   final String? modelPath;
   final String? modelError;
+  final bool fromCache;
   const BuildingLoaded({
     required this.building,
     required this.floors,
     required this.currentFloor,
     this.modelPath,
     this.modelError,
+    this.fromCache = false,
   });
-  @override List<Object?> get props => [building, floors, currentFloor, modelPath, modelError];
+  @override List<Object?> get props => [building, floors, currentFloor, modelPath, modelError, fromCache];
 }
 
 class FloorSwitched extends MapasState {
@@ -104,6 +106,7 @@ class MapasBloc extends Bloc<MapasEvent, MapasState> {
         ),
         modelPath: data.modelPath,
         modelError: data.modelError,
+        fromCache: data.fromCache,
       )),
     );
   }

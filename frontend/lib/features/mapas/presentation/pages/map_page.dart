@@ -86,6 +86,33 @@ class _MapPageState extends State<MapPage> {
                 // POI Markers Overlay
                 ..._buildPoiMarkers(state, floor),
                 
+                // Estado sin conexión: datos locales, posiblemente desactualizados
+                if (state.fromCache)
+                  Positioned(
+                    top: 8,
+                    left: 16,
+                    right: 16,
+                    child: Card(
+                      color: AppTheme.warning.withOpacity(0.1),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.cloud_off, color: AppTheme.warning),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Offline: datos guardados, pueden no ser la '
+                                'versión más reciente',
+                                style: TextStyle(color: AppTheme.warning),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Location Button
                 Positioned(
                   bottom: 100,
