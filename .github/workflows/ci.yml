@@ -292,7 +292,7 @@ jobs:
           fetch-depth: 0 # SonarCloud necesita el historial completo
 
       - name: Download backend coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: backend-coverage
           path: backend/coverage
