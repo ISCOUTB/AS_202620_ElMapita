@@ -13,7 +13,7 @@ Reducir latencia y carga sobre Supabase en las lecturas que sostienen EC-01 (pri
 | Cliente | Archivos `.glb` por `(edificio, versión)` | Local, persistente | Disco + índice Hive |
 | Servidor | Edificios, pisos, POIs, URLs firmadas | **Local** (memoria del proceso) | `InMemoryTtlCache` tras el puerto `CachePort` |
 
-Se eligió caché local y no distribuida porque el despliegue es **una instancia** (`render.yaml`, plan free): Redis añadiría un servicio, costo y un punto de falla sin beneficio hoy.
+Se eligió caché local y no distribuida porque el despliegue es **una instancia** (`deploy/compose.lab.yaml`, 256 MB y 0,5 CPU): Redis añadiría un servicio, costo y un punto de falla sin beneficio hoy.
 
 ## Patrón de escritura/lectura
 

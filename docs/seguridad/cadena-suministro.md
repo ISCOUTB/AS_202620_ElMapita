@@ -24,7 +24,7 @@ Lo que importa es el alcance de producción: 8 hallazgos. Los otros 37 están en
 
 | Paquete | Severidad | Origen | Problema | ¿Explotable aquí? | Acción |
 |---------|-----------|--------|----------|-------------------|--------|
-| `proxy-addr` 2.0.7 | Crítica | `express` (vía `@nestjs/platform-express`) | Suplantación de IP con subredes IPv4-mapeadas (GHSA-jqcg-44mw-7w3h) | **Hoy no**: `main.ts` no activa `trust proxy`. **Sí al añadir throttling por IP** (T-05/T-06) detrás de Render/Dokploy, donde hay que activarlo. | Actualizar a ≥ 2.0.8 antes de activar el throttler. |
+| `proxy-addr` 2.0.7 | Crítica | `express` (vía `@nestjs/platform-express`) | Suplantación de IP con subredes IPv4-mapeadas (GHSA-jqcg-44mw-7w3h) | **Hoy no**: `main.ts` no activa `trust proxy`. **Sí al añadir throttling por IP** (T-05/T-06) detrás de Dokploy, donde hay que activarlo. | Actualizar a ≥ 2.0.8 antes de activar el throttler. |
 | `multer` | Alta | `@nestjs/platform-express` | 6 avisos de DoS y bypass de límites | **No**: no hay `FileInterceptor` ni subida multipart en `backend/src`. | Actualizar igualmente; no hay mitigación de código necesaria. |
 | `body-parser` | Alta | `express` | DoS con bytes tras un cuerpo comprimido (GHSA-27r3-jxmh-p828) | **Sí**: parsea todos los cuerpos JSON de `POST /auth/*`, `/pois`, `/location`. | Actualizar; sumar límite de tamaño de body (T-06). |
 | `joi` 17.13.x | Alta | Directa (`config.module.ts`) | Prototype replacement y DoS por regex (3 avisos) | **Bajo**: Joi solo valida variables de entorno al arrancar, no entrada de usuarios. | Actualizar a ≥ 17.13.9. |

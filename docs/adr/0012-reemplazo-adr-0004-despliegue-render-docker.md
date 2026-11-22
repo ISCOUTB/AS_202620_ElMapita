@@ -2,7 +2,7 @@
 number: 0012
 date: 2026-11-02
 title: "Reemplazo de ADR-0004: runtime Node 22 con base slim, health check con timeout y gitleaks por CLI"
-status: Accepted
+status: "Superseded by ADR-0015"
 supersedes: "ADR-0004"
 deciders: ["Diego Rosales Garza", "Rodrigo Vazquez Rico", "Angel Fabian Gutierrez Gomez"]
 technical-story: "ADR-0004 fue editado después de ser aceptado (commits 4532ed6 y b35f784) para registrar tres causas de fondo del deploy real. Se restaura su texto original y este ADR recoge formalmente esos cambios."

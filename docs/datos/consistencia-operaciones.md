@@ -27,7 +27,7 @@ Fuente: código en `backend/src/modules/*` y `frontend/lib/features/mapas`. Alma
 - **Transacciones:** ninguna. Todas las escrituras del backend son de una sola fila.
 - **Fallos de BD:** desde esta entrega un fallo real de Postgres se propaga como **503** y nunca se confunde con "no encontrado" ni con una lista vacía (antes los repositorios devolvían `null`/`[]`). Esto es lo que permite cachear con seguridad: ni los errores ni los vacíos entran a la caché.
 - **RLS:** el backend usa la *service-role key*, que la omite. La seguridad de acceso depende del backend, no de Postgres.
-- **Escalado:** una sola instancia (Render plan free). La caché es local; con más instancias la fila 5–6 pasaría a obsolescencia ≤ TTL entre instancias, sin read-your-writes global (ver [diseno-cache.md](diseno-cache.md#cuándo-pasar-a-redis)).
+- **Escalado:** una sola instancia (Dokploy, 256 MB y 0,5 CPU). La caché es local; con más instancias la fila 5–6 pasaría a obsolescencia ≤ TTL entre instancias, sin read-your-writes global (ver [diseno-cache.md](diseno-cache.md#cuándo-pasar-a-redis)).
 
 ## Verificación contra la implementación
 

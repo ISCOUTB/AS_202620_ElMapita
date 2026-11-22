@@ -70,7 +70,7 @@ Datos de la sesión (2026-11-09): backend 85/85 pruebas, frontend 39/39, `openap
 | RSK-13 | EC-04 corregido en código pero sin remedir en dispositivo; el modo offline se activa ante cualquier fallo de la API. | EC-04 | Medio |
 | RSK-14 | La propiedad de datos entre módulos no se verifica: cliente Supabase global con `service_role`, sin regla de lint, `FloorId` duplicado. | MAN-01, SEG-01 | Alto |
 | RSK-15 | Caché y bus en memoria: se pierden en cada reinicio del contenedor y no se comparten entre instancias. | EC-01, EC-04 | Medio |
-| RSK-17 | La documentación de despliegue está desactualizada: arc42 DEC-08, RSK-05, ADR-0012 y `ia.md` describen Render; el repositorio despliega en Dokploy. Las pruebas y mediciones apuntaron al servicio anterior. | Todos | Medio |
+| RSK-17 | (Resuelto el 2026-11-22, ADR-0015.) La documentación de despliegue está desactualizada: arc42 DEC-08, RSK-05, ADR-0012 y `ia.md` describen Render; el repositorio despliega en Dokploy. Las pruebas y mediciones apuntaron al servicio anterior. | Todos | Medio |
 | RSK-16 | Esquema SQL y RLS sin versionar; arrays desnormalizados `edificios.pisos` y `pisos.pois` sin sincronizar. | SEG-01 | Medio |
 
 **No-riesgos** (decisiones que la evaluación respalda):
@@ -86,7 +86,7 @@ Datos de la sesión (2026-11-09): backend 85/85 pruebas, frontend 39/39, `openap
 | Prioridad | Acción | Cierra |
 |---|---|---|
 | 1 | Medir EC-01 con `backend/scripts/bench-ec01.mjs <url-de-la-API-en-Dokploy>`. Si responde 500, diagnosticar con los logs del contenedor en Dokploy. | RSK-10 |
-| 1b | Actualizar la documentación de despliegue (arc42 DEC-08, RSK-05, ADR-0012 y `ia.md`), que sigue describiendo Render. | RSK-17 |
+| 1b | (Hecho el 2026-11-22: ADR-0015 y documentos vigentes actualizados.) Actualizar la documentación de despliegue (arc42 DEC-08, RSK-05, ADR-0012 y `ia.md`), que sigue describiendo Render. | RSK-17 |
 | 2 | Volver a ejecutar `integration_test/offline_map_test.dart` en dispositivo. | RSK-13 |
 | 3 | Añadir una regla de lint que limite `shared/supabase/client` a `infrastructure/` y unificar `FloorId` en `shared/kernel`. | RSK-14 |
 | 4 | Perfilar fotogramas con el modelo 3D real del campus y medir el tiempo de la alternativa manual de ubicación. | RSK-11, RSK-12 |

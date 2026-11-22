@@ -29,7 +29,7 @@ Se revisó todo `frontend/lib` y `backend/src` buscando envío de coordenadas (`
 | Rol | Usuario registrado | `user_metadata` (ver T-02) | Supabase | Control de acceso | `supabase-auth-client.ts:110` |
 | Tokens de sesión | Usuario registrado | `SecureStorage` del dispositivo | Dispositivo | Mantener la sesión | `supabase_auth_client.dart:33-35` |
 | Identificador de usuario | Usuario registrado | `SecureStorage` | Dispositivo | Sesión | `supabase_auth_client.dart:35` |
-| Dirección IP y cabeceras de cada petición | Cualquier visitante | Logs de Render/Dokploy | Proveedor de despliegue | Operación y depuración | `logger.module.ts:6-19` (solo se redacta `authorization`) |
+| Dirección IP y cabeceras de cada petición | Cualquier visitante | Logs de Dokploy | Proveedor de despliegue | Operación y depuración | `logger.module.ts:6-19` (solo se redacta `authorization`) |
 | Ubicación | Cualquier usuario del mapa | **No se guarda** (solo memoria del dispositivo) | Dispositivo | Mostrar la posición en el mapa | Sección 1 |
 
 Sin datos sensibles en el sentido de la Ley 1581 (salud, biometría, orientación política, etc.). Los visitantes **no** necesitan cuenta: el mapa es público, de modo que su único rastro son los logs de la sección siguiente.
@@ -41,7 +41,7 @@ Sin datos sensibles en el sentido de la Ley 1581 (salud, biometría, orientació
 | PV-1 | `pino-http` registra IP y cabeceras (`cookie`, `user-agent`, `x-forwarded-for`) y `redact` solo cubre `authorization` | Se acumulan datos personales en logs sin necesidad ni plazo definido | Ampliar `redact`; evitar registrar IP completa; definir retención (T-11) |
 | PV-2 | No hay política de retención ni de eliminación de cuenta | No se puede atender una solicitud de supresión | Documentar el procedimiento: borrar el usuario con la API admin de Supabase y verificar que no quedan filas con su `id` |
 | PV-3 | No hay aviso de privacidad ni autorización de tratamiento en la app | Falta transparencia hacia el titular | Pantalla de registro con aviso corto: qué datos se piden, para qué, quién los trata y cómo pedir su supresión |
-| PV-4 | Los datos de cuentas viven en Supabase; la región del proyecto no está documentada | Posible transferencia internacional sin registrar | Anotar región de Supabase y de Render en este documento |
+| PV-4 | Los datos de cuentas viven en Supabase; la región del proyecto no está documentada | Posible transferencia internacional sin registrar | Anotar región de Supabase y del servidor Dokploy en este documento |
 | PV-5 | El registro pide `nombre` aunque la función de mapa no lo usa | Dato recogido sin necesidad | Hacer el campo opcional o eliminarlo si ninguna pantalla lo necesita |
 | PV-6 | El rol y el nombre están en `user_metadata`, que el propio usuario puede editar (T-02) | Integridad de datos personales | Mover el rol a `app_metadata` |
 
@@ -50,7 +50,7 @@ Sin datos sensibles en el sentido de la Ley 1581 (salud, biometría, orientació
 | Tercero | Qué recibe | Control disponible |
 |---------|-----------|--------------------|
 | Supabase | Correo, nombre, contraseña (hash), rol, metadatos de sesión | Contrato del proveedor; revisar región y retención de logs de Auth |
-| Render / Dokploy | IP y cabeceras de las peticiones; logs de la aplicación | Reducir lo que se registra (PV-1) |
+| Dokploy | IP y cabeceras de las peticiones; logs de la aplicación | Reducir lo que se registra (PV-1) |
 | SonarCloud / GitHub | Código fuente, sin datos de usuario | No aplica |
 | Proveedor de IA de desarrollo | Fragmentos del código que se le comparten | Regla de no pegar `.env` ni datos reales (T-17) |
 
@@ -70,7 +70,7 @@ Sin datos sensibles en el sentido de la Ley 1581 (salud, biometría, orientació
 | Ampliar `redact` y no registrar IP completa | PV-1, T-11 | Backend | Media |
 | Aviso de privacidad en el registro | PV-3 | Frontend | Media |
 | Procedimiento de supresión de cuenta documentado y probado | PV-2 | Backend | Media |
-| Anotar regiones de Supabase y Render | PV-4 | DevOps | Baja |
+| Anotar regiones de Supabase y Dokploy | PV-4 | DevOps | Baja |
 | Hacer `nombre` opcional o quitarlo | PV-5 | Frontend / Backend | Baja |
 | Mover el rol a `app_metadata` | PV-6, T-02 | Backend | Crítica |
 | Prueba automatizada que falle si algún endpoint o servicio envía coordenadas | DP-1 | Frontend | Baja |

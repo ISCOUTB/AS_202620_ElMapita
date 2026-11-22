@@ -72,7 +72,7 @@
 | **Árbol de Utilidad** | Técnica de arc42 que descompone los atributos de calidad de un sistema en escenarios concretos y medibles, priorizados por importancia y riesgo. |
 | **ADR (Architecture Decision Record)** | Documento formal y conciso que captura una decisión de diseño arquitectónico relevante, su contexto, alternativas evaluadas y consecuencias. |
 | **arc42** | Plantilla estándar para documentar arquitecturas de software en doce secciones, desde introducción y objetivos hasta glosario. |
-| **Arranque en frío (cold start)** | Latencia añadida cuando un proceso/función se ejecuta sin una instancia activa disponible: hay que aprovisionar el entorno antes de atender. En Render free, ocurre tras ~15 min de inactividad (ver RSK-05). |
+| **Arranque en frío (cold start)** | Latencia añadida cuando un proceso/función se ejecuta sin una instancia activa disponible: hay que aprovisionar el entorno antes de atender. En el plan free de Render (despliegue anterior) ocurría tras ~15 min de inactividad (ver RSK-05, histórico). |
 | **Aspecto** | Característica funcional de extremo a extremo elegida para validar la arquitectura tempranamente mediante un corte vertical. |
 | **C4 (modelo)** | Notación para diagramar arquitectura de software en niveles de abstracción crecientes: Contexto, Contenedores, Componentes y Código. |
 | **C4 Nivel 1 (Contexto)** | Diagrama C4 que muestra el sistema como una caja negra y sus interacciones con usuarios y sistemas externos. |
@@ -82,7 +82,7 @@
 | **Deriva de contrato** | Discrepancia entre lo que un contrato de API documenta y lo que el código realmente expone en tiempo de ejecución; se detecta comparando el contrato contra un documento generado desde el código (`npm run openapi:drift`) o ejerciendo las rutas reales (`npm run test:contracts`). |
 | **Escenario de Calidad (EC)** | Enunciado verificable que describe un estímulo, el contexto y la respuesta esperada del sistema para un atributo de calidad concreto (rendimiento, disponibilidad, confiabilidad). |
 | **Health check honesto** | Endpoint que declara si la instancia está en condiciones de atender tráfico usando el código de estado HTTP (no solo el cuerpo de la respuesta), para que un orquestador pueda actuar en consecuencia. `GET /health` responde 503 real cuando Supabase es inaccesible (antes de ADR-0004, siempre respondía 200). |
-| **Infraestructura como Código (IaC)** | Práctica de declarar la topología de despliegue (contenedores, variables de entorno, health checks) en archivos versionados en git en vez de configuración manual no reproducible. En El Mapita UTB: `backend/Dockerfile` + `render.yaml` (ver ADR-0004). |
+| **Infraestructura como Código (IaC)** | Práctica de declarar la topología de despliegue (contenedores, variables de entorno, health checks) en archivos versionados en git en vez de configuración manual no reproducible. En El Mapita UTB: `backend/Dockerfile` + `deploy/compose.lab.yaml` (ver ADR-0015). |
 | **Interfaz (IF)** | Punto de integración documentado entre dos contenedores o entre el sistema y un servicio externo, con su protocolo y propósito. |
 | **Matriz de Trazabilidad** | Tabla que enlaza cada aspecto con su requisito, escenarios de calidad, vistas C4, ADR, código fuente, pruebas y evidencia. |
 | **Prueba de Contrato** | Verificación automatizada, corrida en el pipeline, de que la implementación real de una API cumple lo que su contrato versionado declara (rutas existentes, formas de request/response válidas contra los schemas). |
@@ -99,13 +99,13 @@
 | **ADR-0001** | Registro de decisión arquitectónica que documenta la adopción de Monolito Modular para backend y frontend. |
 | **ADR-0002** | Registro de decisión arquitectónica que documenta la estrategia frente a la restricción de rendimiento en dispositivos de gama de entrada (RES-04). |
 | **ADR-0003** | Registro de decisión arquitectónica que documenta la estrategia de contrato de integración FE-BE: OpenAPI 3.1 versionado con prueba de contrato en el pipeline (DEC-07). |
-| **ADR-0004** | Registro de decisión arquitectónica que documenta la estrategia de despliegue y operación: Render + Docker, IaC versionada, health check honesto, logs estructurados y métrica ligada a EC-01 (DEC-08). |
+| **ADR-0004** | Registro de decisión arquitectónica que documenta la estrategia original de despliegue y operación (Render + Docker, reemplazada por ADR-0015 con Dokploy): IaC versionada, health check honesto, logs estructurados y métrica ligada a EC-01 (DEC-08). |
 | **DEC-01 … DEC-08** | Numeración de las ocho decisiones arquitectónicas registradas en la matriz de decisiones del arc42, cada una vinculada a un ADR. |
 | **EC-01 … EC-04** | Numeración de los cuatro escenarios de calidad del proyecto: carga inicial, fluidez de render, precisión de ubicación y disponibilidad sin conexión. |
 | **IF-01 … IF-05** | Numeración de las cinco interfaces documentadas entre los contenedores del sistema y los servicios externos. |
 | **RES-01 … RES-04** | Numeración de las cuatro restricciones del proyecto: académica, física/tecnológica, operacional y de rendimiento en gama de entrada. |
 | **RF-01** | Identificador del requisito funcional derivado del aspecto A-01. |
-| **RSK-01 … RSK-05** | Numeración de los cinco riesgos arquitectónicos identificados: complejidad de modelos 3D, disparidad de hardware GPU, dependencia de Supabase, deriva de contrato de API (cerrado) y cold start del plan free de Render vs. EC-01. |
+| **RSK-01 … RSK-05** | Numeración de los cinco riesgos arquitectónicos identificados: complejidad de modelos 3D, disparidad de hardware GPU, dependencia de Supabase, deriva de contrato de API (cerrado) y cold start del plan free de Render vs. EC-01 (histórico, no aplica en Dokploy). |
 
 ## 6. Tecnologías y herramientas
 
@@ -117,7 +117,7 @@
 | **Bucket `modelos-3d`** | Contenedor de almacenamiento en Supabase Storage donde se publican los archivos de modelos 3D del campus. |
 | **Dart** | Lenguaje de programación en el que está escrita la aplicación móvil con Flutter. |
 | **Dio** | Cliente HTTP para Dart/Flutter usado por `DioClient` para las llamadas a la API REST del backend. |
-| **Docker** | Motor de contenedores usado para empaquetar el backend (`backend/Dockerfile`, build multi-stage sobre `node:20-alpine`) de forma reproducible entre el equipo, CI y Render (ver ADR-0004). |
+| **Docker** | Motor de contenedores usado para empaquetar el backend (`backend/Dockerfile`, build multi-stage sobre `node:20-alpine`) de forma reproducible entre el equipo, CI y Dokploy (ver ADR-0015). |
 | **ESLint** | Herramienta de análisis estático de código JavaScript/TypeScript usada en el backend para verificar calidad y estilo. |
 | **Flutter** | Framework de Google para construir aplicaciones móviles multiplataforma con Dart, usado para el frontend de El Mapita. |
 | **geolocator** | Paquete de Flutter usado para obtener coordenadas y estado de permisos de ubicación del dispositivo. |
@@ -135,7 +135,7 @@
 | **PostgREST** | Servidor web independiente que transforma una base de datos PostgreSQL directamente en una API RESTful. |
 | **Prometheus / prom-client** | Formato y librería de exposición de métricas de series temporales; `@willsoto/nestjs-prometheus` expone `GET /metrics` con un histograma de latencia HTTP (`http_request_duration_seconds`) ligado a EC-01 (ver ADR-0004). No se despliega un servidor Prometheus completo — el endpoint crudo es la evidencia. |
 | **Redocly CLI** | Herramienta de línea de comandos usada en el job `contract` del pipeline para validar (`lint`) que `docs/api/openapi.v1.yaml` sea un documento OpenAPI 3.1 sintácticamente correcto. |
-| **Render** | Plataforma de despliegue (PaaS) elegida para el backend: free tier real para *web services* desde Docker, con `render.yaml` como Blueprint de infraestructura como código (ver ADR-0004). |
+| **Dokploy** | Panel de despliegue del servidor de laboratorio (`iscoutb.dev`) donde corre el backend desde Docker Compose (`deploy/compose.lab.yaml`, ver ADR-0015). Reemplazó a Render, plataforma del despliegue anterior (ADR-0004). |
 | **Supabase** | Alternativa de código abierto a Firebase construida sobre PostgreSQL, que provee autenticación, base de datos, almacenamiento, funciones y capacidades en tiempo real. |
 | **Supabase Realtime** | Servicio de Supabase que distribuye eventos de cambios en la base de datos a los clientes suscritos mediante WebSockets. |
 | **TypeScript** | Superset tipado de JavaScript en el que está escrito el backend construido con NestJS. |

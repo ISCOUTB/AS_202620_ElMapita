@@ -1,6 +1,6 @@
 # S11 — Modelo del sistema para el análisis de amenazas (DFD)
 
-> Fuente: `docs/c4/C4_L2_Container.md`, `backend/src/main.ts`, `deploy/compose.lab.yaml`, `render.yaml`.
+> Fuente: `docs/c4/C4_L2_Container.md`, `backend/src/main.ts`, `deploy/compose.lab.yaml`.
 > Complementa: [`amenazas.md`](./amenazas.md).
 
 ## 1. Diagrama de flujo de datos con límites de confianza
@@ -16,7 +16,7 @@ flowchart LR
         APP["App Flutter<br/>SecureStorage · Hive · Geolocator"]
     end
 
-    subgraph TB2["Despliegue propio (Render / Dokploy)"]
+    subgraph TB2["Despliegue propio (Dokploy)"]
         API["Backend NestJS<br/>auth · mapas · pois · ubicacion"]
         BUS["Bus de mensajes en memoria<br/>(ADR-0009)"]
         MET["/metrics · /docs · /health"]
@@ -50,7 +50,7 @@ flowchart LR
 |----|--------|-----------|--------------|
 | AS-1 | Credenciales y tokens de sesión (access/refresh) | Supabase Auth, `SecureStorage` del dispositivo | Alta |
 | AS-2 | Rol del usuario (`estudiante` … `admin_utb`) | `user_metadata` de Supabase | Alta (decide privilegios) |
-| AS-3 | `SUPABASE_SERVICE_ROLE_KEY` | Variables de entorno de Render/Dokploy (`client.ts:11`) | Crítica (omite RLS) |
+| AS-3 | `SUPABASE_SERVICE_ROLE_KEY` | Variables de entorno de Dokploy (`client.ts:11`) | Crítica (omite RLS) |
 | AS-4 | Catálogo de edificios, pisos y POIs | PostgreSQL/PostGIS | Media (integridad más que confidencialidad) |
 | AS-5 | Modelos 3D `.glb` | Supabase Storage | Baja |
 | AS-6 | Ubicación del usuario | Dispositivo (`location_service_impl.dart`) | Alta (dato personal) |

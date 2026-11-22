@@ -34,13 +34,13 @@ Las 17 operaciones REST (16 de negocio + `/metrics`) que el frontend consume par
 
 ## Despliegue y operación del aspecto A-01
 
-El backend que sirve estas 17 operaciones está desplegado como contenedor Docker en Render, con las señales mínimas de operación que EC-01 necesita para ser medible fuera de `localhost`:
+El backend que sirve estas 17 operaciones está desplegado como contenedor Docker en Dokploy (`iscoutb.dev`), con las señales mínimas de operación que EC-01 necesita para ser medible fuera de `localhost`:
 
-- **Infraestructura como código:** [`render.yaml`](../render.yaml) + [`backend/Dockerfile`](../backend/Dockerfile)
-- **Justificación de la estrategia (plataforma, contenedor vs función):** [ADR-0004](adr/0004-despliegue-render-docker.md)
+- **Infraestructura como código:** [`deploy/compose.lab.yaml`](../deploy/compose.lab.yaml) + [`backend/Dockerfile`](../backend/Dockerfile)
+- **Justificación de la estrategia (plataforma, contenedor vs función):** [ADR-0015](adr/0015-reemplazo-adr-0012-despliegue-dokploy.md) (reemplaza a [ADR-0012](adr/0012-reemplazo-adr-0004-despliegue-render-docker.md) y a [ADR-0004](adr/0004-despliegue-render-docker.md))
 - **Health check honesto:** `GET /health` responde 503 real si Supabase es inaccesible (antes siempre 200)
 - **Métrica ligada a EC-01:** `GET /metrics` — histograma `http_request_duration_seconds` para `GET /api/v1/map/buildings/{buildingId}` y `GET /api/v1/map/floors/{floorId}/model`
-- **Riesgo:** RSK-05 — cold start del plan free de Render puede violar el p95 de EC-01 en la primera petición tras inactividad (ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
+- **Riesgo:** RSK-05 — el arranque en frío fue propio de Render y ya no aplica en Dokploy; EC-01 sigue sin medirse en el despliegue vigente (RSK-10) (ver [arc42 §11](arc42/arc42-template-EN.md#section-technical-risks))
 
 ## Decisión de extracción S11
 
