@@ -175,7 +175,7 @@ jobs:
 
   # ==========================================================
   # Docker - construye la imagen del backend (infraestructura como código)
-  # Mismo Dockerfile que usa Render vía render.yaml (ADR-0004)
+  # Mismo Dockerfile que usa el despliegue en Dokploy (deploy/compose.lab.yaml, ADR-0015)
   # ==========================================================
   docker:
     name: Docker build (backend)
@@ -347,7 +347,7 @@ jobs:
           echo "- Docs: ${{ needs.docs.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Contract: ${{ needs.contract.result }} (OpenAPI 3.1, RSK-04 cerrado)" >> $GITHUB_STEP_SUMMARY
           echo "- Secrets: ${{ needs.secrets.result }} (gitleaks)" >> $GITHUB_STEP_SUMMARY
-          echo "- Docker: ${{ needs.docker.result }} (backend/Dockerfile, ver render.yaml)" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker: ${{ needs.docker.result }} (backend/Dockerfile, ver deploy/compose.lab.yaml)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Trazabilidad: \`docs/aspectos.md\` EC-01..EC-04 → \`docs/arc42#ec-0*\` → \`docs/c4\` → \`adr/0001\` → código → pruebas (pendientes)" >> $GITHUB_STEP_SUMMARY
           echo "Contrato de API: \`docs/api/openapi.v1.yaml\` → \`adr/0003\` → \`ci.yml#contract\`" >> $GITHUB_STEP_SUMMARY

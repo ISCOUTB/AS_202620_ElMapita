@@ -15,7 +15,7 @@ export const LOG_REDACT_PATHS = [
     PinoLoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL || 'info',
-        // JSON crudo en producción (Render lo captura de stdout tal cual);
+        // JSON crudo en producción (Dokploy lo captura de stdout tal cual);
         // pretty-print solo en desarrollo local.
         transport:
           process.env.NODE_ENV === 'production'

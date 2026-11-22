@@ -1,7 +1,8 @@
 // EC-01: mide la secuencia de red de la carga inicial (edificio + modelo de piso)
 // contra la API desplegada. NO incluye descarga del .glb ni render en dispositivo.
-// Uso: node backend/scripts/bench-ec01.mjs [baseUrl] [n=30]
-const base = process.argv[2] ?? 'https://elmapita-utb-api.onrender.com';
+// Uso: node backend/scripts/bench-ec01.mjs <baseUrl> [n=30]  (la URL del despliegue en Dokploy no esta en el repo)
+const base = process.argv[2] ?? process.env.API_URL;
+if (!base) throw new Error('Indica la URL de la API: node bench-ec01.mjs <url> [n] (o API_URL)');
 const n = Number(process.argv[3] ?? 30);
 
 const get = async (path) => {

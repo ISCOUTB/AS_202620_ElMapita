@@ -70,7 +70,7 @@ export class HealthController {
       `health check: respondiendo ${isHealthy ? 200 : 503} en ${totalMs}ms total`,
     );
 
-    // El orquestador (Render) decide si manda tráfico según el código HTTP,
+    // El orquestador (Dokploy) decide si manda tráfico según el código HTTP,
     // no según el cuerpo — un 200 con "degraded" adentro es un health check
     // que miente (ver S08: "apaguen la base de datos y miren qué devuelve").
     // El timeout explícito (SUPABASE_CHECK_TIMEOUT_MS) evita que este endpoint

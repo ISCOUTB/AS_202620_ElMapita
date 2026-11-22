@@ -7,7 +7,7 @@
 # Node >=22 en tiempo de ejecución de verdad, no solo por el warning
 # EBADENGINE de npm — sin WebSocket nativo (Node 20 no lo trae), el cliente
 # lanza "Node.js detected but native WebSocket not found" en cada consulta.
-# Esto era la causa real de que /health nunca respondiera sano en Render
+# Esto era la causa real de que /health nunca respondiera sano en el despliegue
 # (ver docs/adr/0004, hallazgo del deploy real — no era Alpine/musl ni la
 # llave de servicio, aunque ambos se corrigieron en el camino).
 #
