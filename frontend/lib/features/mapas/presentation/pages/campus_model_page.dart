@@ -207,16 +207,7 @@ class _CampusModelPageState extends State<CampusModelPage> {
   void _setDestination(Destination? destination) {
     _arrivedNotified = false;
     _destination.value = destination;
-    if (destination == null) {
-      // Sin destino se vuelve a ver todo el campus.
-      _filter.clear();
-    } else {
-      // Su categoria queda activa en el filtro para que el edificio se vea.
-      final category = _categoryByName(destination.category);
-      if (category != null && !_filter.value.contains(category)) {
-        _filter.toggle(category);
-      }
-    }
+    // El destino ya no toca el filtro: el resto del campus se ve en gris.
     _pushHighlight();
     _updateGuide();
   }
@@ -225,10 +216,17 @@ class _CampusModelPageState extends State<CampusModelPage> {
   void _pushHighlight() {
     if (!_viewerReady) return;
     final destination = _destination.value;
-    final arg = destination == null
-        ? 'null'
-        : jsonEncode(CampusLayers.sanitizeNodeName(destination.node));
-    _controller?.runJavaScript('setHighlight($arg)');
+    final layers = _layers;
+    if (destination == null || layers == null) {
+      _controller?.runJavaScript('setHighlight(null, [])');
+      return;
+    }
+    final name = jsonEncode(CampusLayers.sanitizeNodeName(destination.node));
+    final dimmed = jsonEncode([
+      for (final node in layers.dimmedNodes(_nodes, destination.node))
+        CampusLayers.sanitizeNodeName(node),
+    ]);
+    _controller?.runJavaScript('setHighlight($name, $dimmed)');
   }
 
   void _toggleGuide() {
@@ -324,41 +322,11 @@ class _CampusModelPageState extends State<CampusModelPage> {
     final choice = await showModalBottomSheet<Destination>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        builder: (context, scroll) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                filtered
-                    ? AppLocalizations.of(context)!.pickDestinationFiltered
-                    : AppLocalizations.of(context)!.pickDestination,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Expanded(
-              child: options.isEmpty
-                  ? Center(
-                      child: Text(
-                          AppLocalizations.of(context)!.noBuildingsInFilter))
-                  : ListView(
-                      controller: scroll,
-                      children: [
-                        for (final option in options)
-                          ListTile(
-                            leading: Icon(_categoryByName(option.category)?.icon),
-                            title: Text(option.label),
-                            subtitle: Text(_categoryText(context, option.category)),
-                            onTap: () => Navigator.of(context).pop(option),
-                          ),
-                      ],
-                    ),
-            ),
-          ],
-        ),
+      builder: (context) => _DestinationSheet(
+        options: options,
+        filtered: filtered,
+        iconFor: (c) => _categoryByName(c)?.icon,
+        categoryText: (c) => _categoryText(context, c),
       ),
     );
     if (choice != null) _setDestination(choice);
@@ -465,25 +433,78 @@ class _CampusModelPageState extends State<CampusModelPage> {
     scene.queueRender();
   }
 
-  // Los materiales se comparten entre nodos: se clona el del destino antes de
-  // teñirlo y se guarda el original para restaurarlo.
-  function tint(material) {
+  // Destino dorado con brillo y resto del campus en gris. Los materiales se
+  // comparten entre nodos: se clonan antes de cambiarlos y se guarda el
+  // original para restaurarlo.
+  var dimmed = new Set();
+  var glowMats = [];
+  var fadeMats = [];
+  var fadeStart = 0;
+  var glowRaf = null;
+  var lastGlow = 0;
+  var GRAY = 0x9E9E9E;
+
+  function goldMaterial(material) {
     var copy = material.clone();
-    // Los colores del modelo son pastel: solo sumar emision los deja casi
-    // blancos, asi que tambien se reemplaza el color base.
+    // Los colores del modelo son pastel: se reemplaza el color base.
     copy.map = null;
-    if (copy.color) copy.color.setHex(0xFFA000);
+    if (copy.color) copy.color.setHex(0xFFC400);
     if (copy.emissive) {
-      copy.emissive.setHex(0xFF8F00);
-      copy.emissiveIntensity = 0.5;
+      copy.emissive.setHex(0xFFAB00);
+      copy.emissiveIntensity = 0.6;
     }
+    if (copy.metalness !== undefined) copy.metalness = 0.5;
+    if (copy.roughness !== undefined) copy.roughness = 0.35;
     copy.needsUpdate = true;
+    glowMats.push(copy);
     return copy;
+  }
+
+  function grayMaterial(material, cache) {
+    if (cache.has(material)) return cache.get(material);
+    var copy = material.clone();
+    var from = copy.color ? copy.color.clone() : null;
+    copy.map = null;
+    if (copy.color) copy.color.copy(from);
+    if (copy.emissive) copy.emissive.setHex(0x000000);
+    copy.needsUpdate = true;
+    if (from) fadeMats.push({ mat: copy, from: from });
+    cache.set(material, copy);
+    return copy;
+  }
+
+  function swap(mesh, fn) {
+    if (!mesh.isMesh || mesh.userData.originalMaterial) return;
+    mesh.userData.originalMaterial = mesh.material;
+    mesh.material = Array.isArray(mesh.material)
+      ? mesh.material.map(fn)
+      : fn(mesh.material);
+  }
+
+  function stepGlow(now) {
+    var scene = getScene();
+    if (now - lastGlow > 33) {
+      lastGlow = now;
+      var k = 0.5 + 0.5 * Math.sin(now / 450);
+      glowMats.forEach(function (m) { m.emissiveIntensity = 0.35 + 0.9 * k; });
+      if (scene) scene.queueRender();
+    }
+    // Transicion a gris (320 ms).
+    if (fadeMats.length) {
+      var t = Math.min(1, (now - fadeStart) / DURATION);
+      var gray = new (fadeMats[0].from.constructor)(GRAY);
+      fadeMats.forEach(function (f) { f.mat.color.copy(f.from).lerp(gray, t); });
+      if (t === 1) fadeMats = [];
+      if (scene) scene.queueRender();
+    }
+    glowRaf = glowMats.length || fadeMats.length ? requestAnimationFrame(stepGlow) : null;
   }
 
   function paint() {
     var scene = getScene();
     if (!scene) return;
+    glowMats = [];
+    fadeMats = [];
     scene.traverse(function (o) {
       if (o.isMesh && o.userData.originalMaterial) {
         o.material = o.userData.originalMaterial;
@@ -492,21 +513,21 @@ class _CampusModelPageState extends State<CampusModelPage> {
     });
     if (highlighted) {
       scene.traverse(function (o) {
-        if (o.name !== highlighted) return;
-        o.traverse(function (mesh) {
-          if (!mesh.isMesh || mesh.userData.originalMaterial) return;
-          mesh.userData.originalMaterial = mesh.material;
-          mesh.material = Array.isArray(mesh.material)
-            ? mesh.material.map(tint)
-            : tint(mesh.material);
-        });
+        if (o.name === highlighted) o.traverse(function (m) { swap(m, goldMaterial); });
       });
+      var cache = new Map();
+      scene.traverse(function (o) {
+        if (dimmed.has(o.name)) o.traverse(function (m) { swap(m, function (x) { return grayMaterial(x, cache); }); });
+      });
+      fadeStart = performance.now();
+      if (glowRaf === null) glowRaf = requestAnimationFrame(stepGlow);
     }
     scene.queueRender();
   }
 
-  window.setHighlight = function (name) {
+  window.setHighlight = function (name, names) {
     highlighted = name;
+    dimmed = new Set(names || []);
     paint();
   };
 
@@ -631,6 +652,7 @@ class _FilterChips extends StatelessWidget {
                   avatar: Icon(category.icon, size: 18),
                   label: Text(categoryLabel(context, category)),
                   selected: selected.contains(category),
+                  showCheckmark: false,
                   onSelected: (_) => filter.toggle(category),
                 ),
               ),
@@ -727,6 +749,101 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 12),
           FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
         ],
+      ),
+    );
+  }
+}
+
+/// Hoja de "Ir a...": lista de destinos con barra de busqueda.
+class _DestinationSheet extends StatefulWidget {
+  final List<Destination> options;
+  final bool filtered;
+  final IconData? Function(String category) iconFor;
+  final String Function(String category) categoryText;
+
+  const _DestinationSheet({
+    required this.options,
+    required this.filtered,
+    required this.iconFor,
+    required this.categoryText,
+  });
+
+  @override
+  State<_DestinationSheet> createState() => _DestinationSheetState();
+}
+
+class _DestinationSheetState extends State<_DestinationSheet> {
+  final _controller = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final results =
+        filterDestinations(widget.options, _query, widget.categoryText);
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        maxChildSize: 0.9,
+        builder: (context, scroll) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                widget.filtered ? l10n.pickDestinationFiltered : l10n.pickDestination,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                autofocus: false,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: l10n.searchDestination,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _controller.clear();
+                            setState(() => _query = '');
+                          },
+                        ),
+                ),
+                controller: _controller,
+                onChanged: (value) => setState(() => _query = value),
+              ),
+            ),
+            Expanded(
+              child: widget.options.isEmpty
+                  ? Center(child: Text(l10n.noBuildingsInFilter))
+                  : results.isEmpty
+                      ? Center(child: Text(l10n.noSearchResults))
+                      : ListView(
+                          controller: scroll,
+                          children: [
+                            for (final option in results)
+                              ListTile(
+                                leading: Icon(widget.iconFor(option.category)),
+                                title: Text(option.label),
+                                subtitle: Text(widget.categoryText(option.category)),
+                                onTap: () => Navigator.of(context).pop(option),
+                              ),
+                          ],
+                        ),
+            ),
+          ],
+        ),
       ),
     );
   }

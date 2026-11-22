@@ -125,6 +125,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get noBuildingsInFilter => 'No hay edificios en el filtro actual';
 
   @override
+  String get searchDestination => 'Buscar lugar';
+
+  @override
+  String get noSearchResults => 'Sin resultados para tu búsqueda';
+
+  @override
   String destinationChip(String name) {
     return 'Destino: $name';
   }

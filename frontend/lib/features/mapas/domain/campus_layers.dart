@@ -76,6 +76,19 @@ class CampusLayers {
     return hidden;
   }
 
+  /// Nodos que se pintan en gris cuando hay un destino: todo salvo el destino, las areas verdes, las etiquetas (`Etq_`) y
+  /// lo que ya va oculto. La base (terreno y vias) nunca se atenua.
+  Set<String> dimmedNodes(Iterable<String> allNodes, String destination) {
+    final dimmed = <String>{};
+    for (final node in allNodes) {
+      if (node == destination || isBase(node)) continue;
+      if (alwaysHidden.contains(node) || node.startsWith('Etq_')) continue;
+      if (categoryOf(node) == 'areasVerdes') continue;
+      dimmed.add(node);
+    }
+    return dimmed;
+  }
+
   /// Three.js sanea los nombres al cargar el .glb (espacios -> '_', quita
   /// `[ ] . : /`); el JS del visor compara contra el nombre ya saneado.
   static String sanitizeNodeName(String name) => name

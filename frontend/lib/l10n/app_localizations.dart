@@ -326,6 +326,18 @@ abstract class AppLocalizations {
   /// **'No hay edificios en el filtro actual'**
   String get noBuildingsInFilter;
 
+  /// No description provided for @searchDestination.
+  ///
+  /// In es, this message translates to:
+  /// **'Buscar lugar'**
+  String get searchDestination;
+
+  /// No description provided for @noSearchResults.
+  ///
+  /// In es, this message translates to:
+  /// **'Sin resultados para tu búsqueda'**
+  String get noSearchResults;
+
   /// No description provided for @destinationChip.
   ///
   /// In es, this message translates to:

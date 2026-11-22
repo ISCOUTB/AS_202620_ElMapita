@@ -38,6 +38,8 @@
   "pickDestination": "¿A dónde quieres ir?",
   "pickDestinationFiltered": "¿A dónde quieres ir? (categorías filtradas)",
   "noBuildingsInFilter": "No hay edificios en el filtro actual",
+  "searchDestination": "Buscar lugar",
+  "noSearchResults": "Sin resultados para tu búsqueda",
   "destinationChip": "Destino: {name}",
   "@destinationChip": {
     "placeholders": {

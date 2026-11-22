@@ -64,3 +64,33 @@ class ArrivalGuide {
     return ArrivalPhase.far;
   }
 }
+
+/// Filtra destinos por texto, sin distinguir mayusculas ni acentos, contra el
+/// nombre y la categoria. Una consulta vacia devuelve todos.
+List<Destination> filterDestinations(
+  List<Destination> options,
+  String query,
+  String Function(String category) categoryText,
+) {
+  final terms = _fold(query).split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
+  if (terms.isEmpty) return options;
+  return [
+    for (final option in options)
+      if (terms.every(
+        (t) => _fold('${option.label} ${categoryText(option.category)}').contains(t),
+      ))
+        option,
+  ];
+}
+
+String _fold(String value) {
+  const from = 'áàäâéèëêíìïîóòöôúùüûñ';
+  const to = 'aaaaeeeeiiiioooouuuun';
+  final lower = value.toLowerCase();
+  final out = StringBuffer();
+  for (final ch in lower.split('')) {
+    final i = from.indexOf(ch);
+    out.write(i >= 0 ? to[i] : ch);
+  }
+  return out.toString();
+}

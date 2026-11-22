@@ -9,6 +9,7 @@ import 'package:frontend/features/mapas/domain/campus_layers.dart';
 import 'package:frontend/features/mapas/infrastructure/storage/glb_node_names.dart';
 
 void main() {
+  destinationSearchTests();
   const bounds = NodeBounds(minX: 0, maxX: 10, minZ: 0, maxZ: 20);
 
   group('NodeBounds.distanceTo', () {
@@ -92,5 +93,41 @@ void main() {
     expect(result['Edificio']!.maxX, 105);
     expect(result['Edificio']!.minZ, -60);
     expect(result['Edificio']!.maxZ, -40);
+  });
+}
+
+void destinationSearchTests() {
+  const b = NodeBounds(minX: 0, maxX: 1, minZ: 0, maxZ: 1);
+  final options = [
+    const Destination(node: 'Cafeteria', category: 'cafeteria', bounds: b),
+    const Destination(node: 'Bloque_A3', category: 'salones', bounds: b),
+    const Destination(node: 'Cancha_Futbol_6126m2', category: 'canchas', bounds: b),
+  ];
+  String text(String c) => const {
+        'cafeteria': 'Cafetería',
+        'salones': 'Salones',
+        'canchas': 'Canchas',
+      }[c]!;
+
+  group('filterDestinations', () {
+    test('consulta vacia devuelve todos', () {
+      expect(filterDestinations(options, '  ', text), options);
+    });
+
+    test('ignora mayusculas y acentos y busca por nombre', () {
+      expect(filterDestinations(options, 'CAFETERÍA', text).map((d) => d.node),
+          ['Cafeteria']);
+      expect(filterDestinations(options, 'bloque a3', text).map((d) => d.node),
+          ['Bloque_A3']);
+    });
+
+    test('tambien busca por categoria', () {
+      expect(filterDestinations(options, 'cancha', text).map((d) => d.node),
+          ['Cancha_Futbol_6126m2']);
+    });
+
+    test('sin coincidencias devuelve vacio', () {
+      expect(filterDestinations(options, 'piscina', text), isEmpty);
+    });
   });
 }

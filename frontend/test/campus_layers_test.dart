@@ -69,6 +69,19 @@ void main() {
       expect(layers.categoryOf('Etq_Entrada'), isNull);
     });
 
+    test('dimmedNodes grisa edificios y deja destino, base, verdes y etiquetas', () {
+      final withGreen = CampusLayers({
+        'cafeteria': {'Cafeteria'},
+        'areasVerdes': {'Jardin'},
+        'salones': {'Bloque_A3'},
+      });
+      final dimmed = withGreen.dimmedNodes(const [
+        'Plano_Referencia', 'Terreno', 'Via_Interna', 'Cafeteria',
+        'Bloque_A3', 'Talleres', 'Jardin', 'Etq_Cafetería',
+      ], 'Cafeteria');
+      expect(dimmed, {'Bloque_A3', 'Talleres'});
+    });
+
     test('hasLayer distingue categorias sin nodos', () {
       expect(layers.hasLayer('cafeteria'), isTrue);
       expect(layers.hasLayer('banos'), isFalse);
