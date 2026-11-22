@@ -1,0 +1,16 @@
+{
+  "fecha": "2026-11-22T21:25:45.334Z",
+  "ruta": "mapa_capas + utb_campus.glb (Supabase directo, sin cache)",
+  "n": 30,
+  "glbBytes": 3819344,
+  "status": [
+    "200/200"
+  ],
+  "minMs": 530,
+  "p50Ms": 590,
+  "p95Ms": 1026,
+  "maxMs": 1295,
+  "umbralP95Ms": 5000,
+  "exitosas": true,
+  "cumple": true
+}

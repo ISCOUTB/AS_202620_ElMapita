@@ -1,0 +1,15 @@
+{
+  "fecha": "2026-11-22T21:24:56.861Z",
+  "base": "https://elmapita.iscoutb.dev",
+  "n": 30,
+  "statusBuildingFloor": [
+    "404/404"
+  ],
+  "minMs": 404,
+  "p50Ms": 439,
+  "p95Ms": 551,
+  "maxMs": 1418,
+  "umbralP95Ms": 5000,
+  "exitosas": false,
+  "cumple": false
+}
