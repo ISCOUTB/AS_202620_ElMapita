@@ -85,7 +85,7 @@ class _CampusHomePageState extends State<CampusHomePage> {
               itemBuilder: (context, index) {
                 final place = _filteredPlaces[index];
                 return ListTile(
-                  leading: Icon(place.category.icon, color: AppTheme.primary),
+                  leading: Icon(place.category.icon, color: Theme.of(context).colorScheme.primary),
                   title: Text(place.nameFor(languageCode)),
                   subtitle: Text(place.locationFor(languageCode)),
                 );
@@ -110,7 +110,6 @@ class _CategoryDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return Drawer(
-      backgroundColor: AppTheme.primary,
       child: SafeArea(
         child: Column(
           children: [
@@ -201,7 +200,8 @@ class _DrawerItem extends StatelessWidget {
             : Colors.transparent,
         border: Border(
           left: BorderSide(
-            color: selected ? AppTheme.skyBlue : Colors.transparent,
+            // Decorative accent bar only; the label stays white on night blue.
+            color: selected ? AppTheme.of(context).decorative : Colors.transparent,
             width: 4,
           ),
         ),

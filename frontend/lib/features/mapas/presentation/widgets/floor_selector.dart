@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
-import '../../../../shared/theme/app_theme.dart';
 
 class FloorSelector extends StatelessWidget {
   final List<Floor> floors;
@@ -29,7 +28,7 @@ class FloorSelector extends StatelessWidget {
           child: Row(
             children: [
               if (index == currentIndex)
-                Icon(Icons.check, size: 18, color: AppTheme.primary),
+                Icon(Icons.check, size: 18, color: Theme.of(context).colorScheme.primary),
               if (index == currentIndex) const SizedBox(width: 8),
               Text(floor.nombre),
             ],
@@ -39,24 +38,24 @@ class FloorSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.primary.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.layers, size: 18, color: AppTheme.primary),
+            Icon(Icons.layers, size: 18, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 6),
             Text(
               floors[currentIndex].nombre,
               style: TextStyle(
-                color: AppTheme.primary,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
             ),
             const SizedBox(width: 4),
-            Icon(Icons.expand_more, size: 18, color: AppTheme.primary),
+            Icon(Icons.expand_more, size: 18, color: Theme.of(context).colorScheme.primary),
           ],
         ),
       ),

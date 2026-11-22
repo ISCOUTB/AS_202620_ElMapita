@@ -60,7 +60,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: AppTheme.primary,
+                            gradient: AppTheme.headerGradient(AppTheme.of(context)),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Icon(
@@ -74,14 +74,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           'Crear cuenta',
                           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: AppTheme.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Únete a El Mapita UTB',
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

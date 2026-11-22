@@ -19,9 +19,9 @@ class LanguageToggleButton extends StatelessWidget {
       onPressed: () => context.read<LocaleCubit>().toggle(),
       icon: Text(
         locale.languageCode.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontWeight: FontWeight.bold,
-          color: AppTheme.onPrimary,
+          color: AppTheme.of(context).onHeader,
         ),
       ),
     );

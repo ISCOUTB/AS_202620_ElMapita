@@ -94,7 +94,7 @@ class _LocationPageState extends State<LocationPage> {
           Container(
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
@@ -104,13 +104,13 @@ class _LocationPageState extends State<LocationPage> {
                   Icon(
                     Icons.map,
                     size: 48,
-                    color: Colors.grey.shade400,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Vista de mapa\n(${location.coordinates.latitude.toStringAsFixed(6)}, ${location.coordinates.longitude.toStringAsFixed(6)})',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -192,7 +192,7 @@ class _LocationPageState extends State<LocationPage> {
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -218,7 +218,7 @@ class _LocationPageState extends State<LocationPage> {
             Icon(
               granted ? Icons.location_on : Icons.location_off,
               size: 64,
-              color: granted ? AppTheme.secondary : AppTheme.error,
+              color: granted ? AppTheme.of(context).success : AppTheme.of(context).error,
             ),
             const SizedBox(height: 16),
             Text(
@@ -232,7 +232,7 @@ class _LocationPageState extends State<LocationPage> {
                   : 'Necesitas habilitar el permiso de ubicación en la configuración',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
@@ -261,7 +261,7 @@ class _LocationPageState extends State<LocationPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.my_location, size: 64, color: Colors.grey.shade400),
+            Icon(Icons.my_location, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               'Tu ubicación',
@@ -272,7 +272,7 @@ class _LocationPageState extends State<LocationPage> {
               'Toca el botón para obtener tu ubicación actual',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey.shade600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),

@@ -93,18 +93,18 @@ class _MapPageState extends State<MapPage> {
                     left: 16,
                     right: 16,
                     child: Card(
-                      color: AppTheme.warning.withOpacity(0.1),
+                      color: AppTheme.of(context).warning.withOpacity(0.1),
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Row(
                           children: [
-                            Icon(Icons.cloud_off, color: AppTheme.warning),
+                            Icon(Icons.cloud_off, color: AppTheme.of(context).warning),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'Offline: datos guardados, pueden no ser la '
                                 'versión más reciente',
-                                style: TextStyle(color: AppTheme.warning),
+                                style: TextStyle(color: AppTheme.of(context).warning),
                               ),
                             ),
                           ],
@@ -129,17 +129,17 @@ class _MapPageState extends State<MapPage> {
                     left: 16,
                     right: 16,
                     child: Card(
-                      color: AppTheme.warning.withOpacity(0.1),
+                      color: AppTheme.of(context).warning.withOpacity(0.1),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
                           children: [
-                            Icon(Icons.warning_amber, color: AppTheme.warning),
+                            Icon(Icons.warning_amber, color: AppTheme.of(context).warning),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'No se pudo cargar el modelo 3D: ${state.modelError}',
-                                style: TextStyle(color: AppTheme.warning),
+                                style: TextStyle(color: AppTheme.of(context).warning),
                               ),
                             ),
                           ],
@@ -161,7 +161,7 @@ class _MapPageState extends State<MapPage> {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.grey.shade100,
+      color: Theme.of(context).colorScheme.surface,
       child: state.modelPath != null
           ? _buildModelViewer(state.modelPath!)
           : _buildPlaceholderMap(floor),
@@ -177,7 +177,7 @@ class _MapPageState extends State<MapPage> {
           Icon(
             Icons.model_training,
             size: 64,
-            color: AppTheme.primary,
+            color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 16),
           Text(
@@ -185,13 +185,13 @@ class _MapPageState extends State<MapPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Ruta: $modelPath',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -207,7 +207,7 @@ class _MapPageState extends State<MapPage> {
           Icon(
             Icons.map_outlined,
             size: 64,
-            color: Colors.grey.shade400,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
@@ -215,13 +215,13 @@ class _MapPageState extends State<MapPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Modelo 3D: ${floor.modelo3DVersion.value}',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(

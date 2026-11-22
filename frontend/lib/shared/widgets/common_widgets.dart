@@ -69,7 +69,7 @@ class ErrorView extends StatelessWidget {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: AppTheme.error,
+              color: AppTheme.of(context).error,
             ),
             const SizedBox(height: 16),
             Text(
@@ -156,8 +156,11 @@ class AppSnackBar {
   static void show(BuildContext context, String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppTheme.error : AppTheme.primary,
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor:
+            isError ? AppTheme.of(context).error : AppTheme.of(context).headerStart,
+        showCloseIcon: true,
+        closeIconColor: Colors.white,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -186,7 +189,7 @@ class PrecisionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (color, label, icon) = _getPrecisionInfo();
+    final (color, label, icon) = _getPrecisionInfo(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -217,15 +220,16 @@ class PrecisionIndicator extends StatelessWidget {
     );
   }
 
-  (Color, String, IconData) _getPrecisionInfo() {
+  (Color, String, IconData) _getPrecisionInfo(BuildContext context) {
+    final p = AppTheme.of(context);
     if (precisionMeters <= 5) {
-      return (AppTheme.secondary, 'Alta precisión', Icons.gps_fixed);
+      return (p.success, 'Alta precisión', Icons.gps_fixed);
     } else if (precisionMeters <= 15) {
-      return (AppTheme.primary, 'Precisión media', Icons.gps_not_fixed);
+      return (p.accent, 'Precisión media', Icons.gps_not_fixed);
     } else if (precisionMeters <= 50) {
-      return (AppTheme.warning, 'Baja precisión', Icons.location_off);
+      return (p.warning, 'Baja precisión', Icons.location_off);
     } else {
-      return (Colors.grey, 'Ubicación manual', Icons.edit_location);
+      return (p.textSecondary, 'Ubicación manual', Icons.edit_location);
     }
   }
 }

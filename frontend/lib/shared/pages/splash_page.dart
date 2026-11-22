@@ -6,7 +6,6 @@ import '../../core/di/injector.dart';
 import '../../core/storage/local_storage.dart';
 import '../../features/mapas/infrastructure/api/campus_layers_repository.dart';
 import '../../features/mapas/infrastructure/storage/model_cache.dart';
-import '../theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 
 class SplashPage extends StatefulWidget {
@@ -92,10 +91,13 @@ class _SplashPageState extends State<SplashPage> {
               fit: BoxFit.contain,
             ),
             const SizedBox(height: 32),
-            const SizedBox(
+            SizedBox(
               width: 28,
               height: 28,
-              child: CircularProgressIndicator(strokeWidth: 3, color: AppTheme.primary),
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ],
         ),

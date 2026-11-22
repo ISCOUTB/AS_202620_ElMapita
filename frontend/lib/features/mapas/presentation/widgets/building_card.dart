@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import '../../domain/entities.dart';
-import '../../../../shared/theme/app_theme.dart';
 
 class BuildingCard extends StatelessWidget {
   final Building building;
@@ -30,12 +29,12 @@ class BuildingCard extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.apartment,
-                  color: AppTheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 28,
                 ),
               ),
@@ -55,7 +54,7 @@ class BuildingCard extends StatelessWidget {
                     Text(
                       building.codigo,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -64,26 +63,26 @@ class BuildingCard extends StatelessWidget {
                         Icon(
                           Icons.layers,
                           size: 14,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${building.pisos.length} pisos',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 16),
                         Icon(
                           Icons.model_training,
                           size: 14,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           'v${building.versionModelo3D.value}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -94,7 +93,7 @@ class BuildingCard extends StatelessWidget {
               // Chevron
               Icon(
                 Icons.chevron_right,
-                color: Colors.grey.shade400,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),
